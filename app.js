@@ -5,6 +5,9 @@
                  em config.js. persistSession:false — a sessão vive em memória
                  enquanto a página está aberta e nunca é gravada em
                  localStorage/sessionStorage.
+   Fluxo         tela de login (#s1) → app. As demais telas só abrem com sessão
+                 ativa; uma tela por vez, roteada pelo hash da URL. Telas de
+                 Operações (#s5, #s6) exigem perfil de Operações.
    Telas         renderizadas a partir do estado em memória, aplicando as
                  regras do PRD: até 3 itens simultâneos por pessoa, prazo de 14
                  dias, atraso bloqueia nova solicitação e item em manutenção
@@ -80,6 +83,7 @@ const MAX_ITEMS = 3;            // máximo de itens simultâneos por colaborador
 const LOAN_DAYS = 14;           // prazo padrão de devolução
 const OPS_PAGE_SIZE = 7;        // linhas por página em Operações
 const TODAY_LABEL = '21/set';   // data de referência do protótipo (docs/layout.md)
+const DUE_LABEL = '05/out';     // TODAY_LABEL + LOAN_DAYS
 
 /* ---------- 3 · dados de exemplo ---------- */
 const DEMO_USER = {
@@ -123,12 +127,12 @@ const OPS_CHIPS = {
 
 const state = {
   catalog: [
-    {icon:'i-laptop',  name:'MacBook Pro 14"',     meta:'Notebook · PAT-1042',  category:'Notebook',  pat:'PAT-1042', dueLabel:'05/out', state:'ok'},
+    {icon:'i-laptop',  name:'MacBook Pro 14"',     meta:'Notebook · PAT-1042',  category:'Notebook',  pat:'PAT-1042', dueLabel:DUE_LABEL, state:'ok'},
     {icon:'i-laptop',  name:'ThinkPad T14',        meta:'Notebook · PAT-1188',  category:'Notebook',  pat:'PAT-1188', state:'borrowed', with:'Camila Duarte', due:'27/set'},
-    {icon:'i-monitor', name:'Dell UltraSharp 27"', meta:'Monitor · PAT-0871',   category:'Monitor',   pat:'PAT-0871', state:'ok'},
+    {icon:'i-monitor', name:'Dell UltraSharp 27"', meta:'Monitor · PAT-0871',   category:'Monitor',   pat:'PAT-0871', dueLabel:DUE_LABEL, state:'ok'},
     {icon:'i-monitor', name:'LG UltraFine 24"',    meta:'Monitor · PAT-0910',   category:'Monitor',   pat:'PAT-0910', state:'maint', note:'Aguardando peça'},
     {icon:'i-camera',  name:'Sony A7 III',         meta:'Câmera · PAT-0233',    category:'Câmera',    pat:'PAT-0233', state:'borrowed', with:'Rafael Lima', due:'02/out'},
-    {icon:'i-usb',     name:'Dock USB-C Anker',    meta:'Acessório · PAT-0455', category:'Acessório', pat:'PAT-0455', state:'ok'},
+    {icon:'i-usb',     name:'Dock USB-C Anker',    meta:'Acessório · PAT-0455', category:'Acessório', pat:'PAT-0455', dueLabel:DUE_LABEL, state:'ok'},
   ],
   loans: [
     {icon:'i-monitor', name:'Dell UltraSharp 27"', pat:'PAT-0871', meta:'PAT-0871 · retirado em 10/set', dueLabel:'28/set', progress:0.5},
@@ -163,8 +167,19 @@ function sessionUser(){
     initials: initialsOf(meta.full_name || meta.name || user.email),
     name: label,
     email: user.email || '',
-    role: meta.role || 'Colaborador',
+    role: isOps() ? 'Operações' : 'Colaborador',
   };
+}
+
+/* Perfil: vem do JWT do Supabase (app_metadata.role, definido só pelo servidor;
+   user_metadata.role como alternativa). O papel real é o `memberships.role`
+   (ADMIN = Operações) e é imposto no servidor pelo tRPC — aqui só decide o que
+   mostrar. */
+function isOps(){
+  if(!session || !session.user) return false;
+  const raw = (session.user.app_metadata && session.user.app_metadata.role) ||
+              (session.user.user_metadata && session.user.user_metadata.role) || '';
+  return ['admin', 'operacoes', 'operações', 'ops'].indexOf(String(raw).trim().toLowerCase()) !== -1;
 }
 
 function renderSidebar(config){
@@ -176,6 +191,7 @@ function renderSidebar(config){
       <span class="brand-name">EmpresTI</span>
     </div>`;
   NAV_ITEMS.forEach(function(group){
+    if(group.group === 'Operações' && !isOps()) return;
     html += `<div class="nav-group"><p class="nav-label">${group.group}</p>`;
     group.items.forEach(function(item){
       const active = item.href === config.active;
@@ -192,7 +208,8 @@ function renderSidebar(config){
   });
   html += `<div class="sidebar-user">
       <div class="avatar">${user.initials}</div>
-      <div class="user-meta"><div class="name">${user.name}</div><div class="role">${user.role}</div></div>
+      <div class="user-meta"><div class="name" title="${user.email || ''}">${user.name}</div><div class="role">${user.role}</div></div>
+      <button class="logout-btn" type="button" data-action="logout">Sair</button>
     </div>`;
   el.innerHTML = html;
 }
@@ -225,7 +242,7 @@ function catalogCard(item){
       <p class="equip-name">${item.name}</p>
       <p class="equip-meta">${item.meta}</p>
       <p class="equip-footer">${footer}</p>`;
-  if(item.state === 'ok') card.addEventListener('click', function(){ location.hash = '#s3'; });
+  if(item.state === 'ok') card.addEventListener('click', function(){ state.pendingItem = item; renderDetail(); location.hash = '#s3'; });
   return card;
 }
 
@@ -265,6 +282,29 @@ function renderCatalog(){
   }
 
   syncChips('#s2 .chips-row', filter.chip, filter.onlyAvailable);
+}
+
+/* ---------- 5b · detalhe do item (tela 03) ---------- */
+const DETAIL_DEMO_DESC = 'Notebook de alta performance para desenvolvimento e edição. Acompanha carregador USB-C original. Recomendado para uso em escritório e viagens curtas.';
+
+function renderDetail(){
+  const item = state.pendingItem;
+  if(!item) return;
+  const set = function(id, text){ const el = byId(id); if(el) el.textContent = text; };
+  set('detail-name', item.name);
+  set('detail-crumb-name', item.name);
+  set('detail-crumb-cat', item.category);
+  set('detail-cat', item.category);
+  set('detail-pat', item.pat);
+  set('detail-due', item.dueLabel || DUE_LABEL);
+  const icon = byId('detail-icon');
+  if(icon) icon.setAttribute('href', '#' + item.icon);
+  // descrição e histórico de exemplo existem só para o MacBook Pro 14"
+  const demo = item.pat === 'PAT-1042';
+  set('detail-desc', demo ? DETAIL_DEMO_DESC : item.category + ' · ' + item.pat + '. A retirada é feita no balcão de Operações.');
+  const hist = byId('detail-history');
+  if(hist) hist.hidden = !demo;
+  setMessage(byId('detail-message'), '', '');
 }
 
 /* ---------- 6 · meus empréstimos (tela 04) ---------- */
@@ -471,7 +511,7 @@ function openLoanDialog(){
   const body = byId('dialog-body');
   if(body){
     body.innerHTML = 'Você está solicitando <strong style="color:#E6EAF6;">' + item.name + ' (' + item.pat + ')</strong>, ' +
-      'com devolução prevista para <strong style="color:#E6EAF6;">' + item.dueLabel + '</strong>.';
+      'com devolução prevista para <strong style="color:#E6EAF6;">' + (item.dueLabel || DUE_LABEL) + '</strong>.';
   }
   const note = byId('dialog-note');
   if(note){
@@ -497,7 +537,7 @@ function confirmLoan(){
     name: item.name,
     pat: item.pat,
     meta: item.pat + ' · retirado em ' + TODAY_LABEL,
-    dueLabel: item.dueLabel,
+    dueLabel: item.dueLabel || DUE_LABEL,
     progress: 0.12,
   });
   item.state = 'borrowed';
@@ -584,15 +624,40 @@ function loginErrorMessage(error){
   return 'Não foi possível entrar: ' + ((error && error.message) || 'erro desconhecido') + '.';
 }
 
+/* ---------- 11b · roteador (uma tela por vez) ---------- */
+const LOGIN_ROUTE = '#s1';
+const HOME_ROUTE = '#s2';
+const OPS_ROUTES = ['#s5', '#s6'];
+const ROUTES = ['#s1', '#s2', '#s3', '#s4', '#s5', '#s6'];
+
+function resolveRoute(){
+  const wanted = ROUTES.indexOf(location.hash) !== -1 ? location.hash : '';
+  if(!session) return LOGIN_ROUTE;                              // sem sessão: só o login
+  if(!wanted || wanted === LOGIN_ROUTE) return HOME_ROUTE;      // logado: login não faz sentido
+  if(OPS_ROUTES.indexOf(wanted) !== -1 && !isOps()) return HOME_ROUTE;
+  return wanted;
+}
+
+function route(){
+  const target = resolveRoute();
+  if(location.hash !== target){
+    // replace: não deixa a tela barrada no histórico do botão "voltar"
+    history.replaceState(null, '', target);
+  }
+  closeLoanDialog();
+  qsa('.view').forEach(function(view){ view.hidden = ('#' + view.id) !== target; });
+  const current = document.querySelector('.view:not([hidden])');
+  document.title = (current && current.dataset.title ? current.dataset.title + ' · ' : '') + 'EmpresTI';
+  window.scrollTo(0, 0);
+  if(target === LOGIN_ROUTE){
+    const email = byId('login-email');
+    if(email && !email.value) email.focus();
+  }
+}
+
 function applySession(){
   renderSidebars();
-  const user = sessionUser();
-  const chip = byId('doc-session');
-  if(chip) chip.classList.toggle('on', !!user);
-  const text = byId('doc-session-text');
-  if(text) text.textContent = user ? 'Sessão: ' + (user.email || user.name) : 'Sem sessão';
-  const out = byId('logout-btn');
-  if(out) out.hidden = !user;
+  route();
 }
 
 async function handleLogin(event){
@@ -627,11 +692,8 @@ async function handleLogin(event){
     }
     session = result.data.session || null;
     if(senhaEl) senhaEl.value = '';
-    applySession();
-    const user = sessionUser();
-    setMessage(message, 'ok', 'Sessão ativa como ' + (user.email || user.name) + '. Regras aplicadas: até ' +
-      MAX_ITEMS + ' itens por pessoa e prazo de ' + LOAN_DAYS + ' dias.');
-    location.hash = '#s2';
+    setMessage(message, '', '');
+    applySession();   // com sessão ativa, o roteador leva ao catálogo
   } catch (error) {
     setMessage(message, 'error', isNetworkError(error)
       ? NETWORK_MSG
@@ -648,9 +710,8 @@ async function handleLogout(){
     /* a sessão em memória é descartada logo abaixo de qualquer forma */
   }
   session = null;
-  applySession();
+  applySession();   // sem sessão, o roteador volta ao login
   setMessage(byId('login-message'), 'info', 'Sessão encerrada.');
-  location.hash = '#s1';
 }
 
 /* ---------- 12 · eventos ---------- */
@@ -735,8 +796,11 @@ function wireDialog(){
 function wireNavigation(){
   const loginForm = byId('login-form');
   if(loginForm) loginForm.addEventListener('submit', handleLogin);
-  const logout = byId('logout-btn');
-  if(logout) logout.addEventListener('click', handleLogout);
+  document.addEventListener('click', function(event){
+    const btn = event.target.closest && event.target.closest('[data-action="logout"]');
+    if(btn) handleLogout();
+  });
+  window.addEventListener('hashchange', route);
   const goCatalog = byId('go-catalog-btn');
   if(goCatalog) goCatalog.addEventListener('click', function(){ location.hash = '#s2'; });
   const goRegister = byId('go-register-btn');
@@ -760,6 +824,7 @@ function boot(){
   renderStats();
   renderSidebars();
   renderLoanCounters();
+  renderDetail();
   updatePreview();
   applySession();
 
@@ -784,8 +849,7 @@ function boot(){
     });
   } else {
     setMessage(byId('login-message'), 'info',
-      'Autenticação indisponível: não foi possível carregar a biblioteca do Supabase. ' + NETWORK_MSG +
-      ' As seis telas continuam navegáveis com os dados de exemplo.');
+      'Autenticação indisponível: não foi possível carregar a biblioteca do Supabase. ' + NETWORK_MSG);
   }
 }
 

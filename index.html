@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>EmpresTI — Especificação de Layout</title>
+<title>EmpresTI</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%23001449%22/><path d=%22M8 11l8-4 8 4v9l-8 4-8-4z%22 fill=%22none%22 stroke=%22%238AA6EE%22 stroke-width=%221.6%22 stroke-linejoin=%22round%22/><path d=%22M8 11l8 4 8-4M16 15v9%22 fill=%22none%22 stroke=%22%238AA6EE%22 stroke-width=%221.6%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,34 +36,10 @@
 </defs>
 </svg>
 
-<div class="doc-toolbar">
-  <span class="doc-title">EmpresTI · v1</span>
-  <nav>
-    <a href="#s1">01 Login</a>
-    <a href="#s2">02 Catálogo</a>
-    <a href="#s3">03 Detalhe</a>
-    <a href="#s4">04 Meus empréstimos</a>
-    <a href="#s5">05 Operações</a>
-    <a href="#s6">06 Cadastrar</a>
-  </nav>
-  <span class="doc-session" id="doc-session">
-    <span class="dot"></span>
-    <span id="doc-session-text">Sem sessão</span>
-    <button class="btn btn-secondary btn-table" id="logout-btn" type="button" hidden>Sair</button>
-  </span>
-</div>
-
-<div class="doc-header">
-  <h1>EmpresTI</h1>
-  <p>Especificação de layout reproduzida como protótipo estático. Empréstimo interno de equipamentos — seis telas ligadas por âncoras, design system Nocturne em modo escuro.</p>
-</div>
-
 <!-- ============================================================ -->
 <!-- 01 · LOGIN -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s1">
-  <p class="frame-label">01 Login</p>
-  <div class="frame" data-screen-label="01 Login" style="min-height:820px;">
+<section class="view" id="s1" data-title="Entrar" hidden>
     <div class="login-shell">
       <div class="login-hero">
         <div class="brand">
@@ -104,8 +80,7 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- ============================================================ -->
 <!-- SIDEBAR (reused markup, generated per screen below) -->
@@ -114,9 +89,7 @@
 <!-- ============================================================ -->
 <!-- 02 · CATÁLOGO -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s2">
-  <p class="frame-label">02 Catálogo</p>
-  <div class="frame" data-screen-label="02 Catálogo">
+<section class="view" id="s2" data-title="Catálogo" hidden>
     <div class="app-shell tall">
       <aside class="sidebar" id="sidebar-2"></aside>
       <div class="main">
@@ -151,15 +124,12 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- ============================================================ -->
 <!-- 03 · DETALHE -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s3">
-  <p class="frame-label">03 Detalhe do item</p>
-  <div class="frame" data-screen-label="03 Detalhe do item">
+<section class="view" id="s3" data-title="Detalhe do item" hidden>
     <div class="app-shell tall">
       <aside class="sidebar" id="sidebar-3"></aside>
       <div class="main">
@@ -167,9 +137,9 @@
           <div class="breadcrumb">
             <a href="#s2">Catálogo</a>
             <svg class="icon" width="12" height="12"><use href="#i-caretright"/></svg>
-            <span>Notebooks</span>
+            <span id="detail-crumb-cat">Notebooks</span>
             <svg class="icon" width="12" height="12"><use href="#i-caretright"/></svg>
-            <span class="current">MacBook Pro 14"</span>
+            <span class="current" id="detail-crumb-name">MacBook Pro 14"</span>
           </div>
           <div class="header-spacer"></div>
           <span class="header-meta">2 de 3 itens com você</span>
@@ -177,24 +147,26 @@
         <div class="content">
           <div class="detail-grid">
             <div>
-              <div class="detail-image"><svg class="icon" width="64" height="64"><use href="#i-laptop"/></svg></div>
+              <div class="detail-image"><svg class="icon" width="64" height="64"><use id="detail-icon" href="#i-laptop"/></svg></div>
               <div class="detail-title-row">
-                <h1>MacBook Pro 14"</h1>
+                <h1 id="detail-name">MacBook Pro 14"</h1>
                 <span class="pill pill-ok">Disponível</span>
               </div>
-              <p class="detail-desc">Notebook de alta performance para desenvolvimento e edição. Acompanha carregador USB-C original. Recomendado para uso em escritório e viagens curtas.</p>
+              <p class="detail-desc" id="detail-desc">Notebook de alta performance para desenvolvimento e edição. Acompanha carregador USB-C original. Recomendado para uso em escritório e viagens curtas.</p>
               <div class="rule"></div>
               <div class="spec-grid">
-                <div class="spec-item"><p class="label">Categoria</p><p class="value">Notebook</p></div>
-                <div class="spec-item"><p class="label">Patrimônio</p><p class="value">PAT-1042</p></div>
+                <div class="spec-item"><p class="label">Categoria</p><p class="value" id="detail-cat">Notebook</p></div>
+                <div class="spec-item"><p class="label">Patrimônio</p><p class="value" id="detail-pat">PAT-1042</p></div>
                 <div class="spec-item"><p class="label">Local</p><p class="value">Balcão · 2º andar</p></div>
                 <div class="spec-item"><p class="label">Última devolução</p><p class="value">02/set</p></div>
               </div>
+              <div id="detail-history">
               <p class="hist-title">Histórico</p>
               <div>
                 <div class="hist-row"><span class="date">02/set</span><span>Devolvido por Bruno Kato</span><span class="result ok">No prazo</span></div>
                 <div class="hist-row"><span class="date">15/ago</span><span>Retirado por Bruno Kato</span><span></span></div>
                 <div class="hist-row"><span class="date">28/jul</span><span>Devolvido por Ana Sato</span><span class="result late">Atraso de 2 dias</span></div>
+              </div>
               </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:16px;">
@@ -202,7 +174,7 @@
                 <h3>Solicitar empréstimo</h3>
                 <div class="side-row"><span>Retirada</span><span class="val">Hoje, 21/set</span></div>
                 <div class="side-row"><span>Prazo padrão</span><span class="val">14 dias</span></div>
-                <div class="side-row"><span>Devolver até</span><span class="val accent">05/out</span></div>
+                <div class="side-row"><span>Devolver até</span><span class="val accent" id="detail-due">05/out</span></div>
                 <button class="btn btn-primary" style="width:100%;" id="open-dialog-btn">Solicitar empréstimo</button>
                 <p class="side-note" id="detail-note">A retirada é feita no balcão de Operações, 2º andar.</p>
               </div>
@@ -229,15 +201,12 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- ============================================================ -->
 <!-- 04 · MEUS EMPRÉSTIMOS -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s4">
-  <p class="frame-label">04 Meus empréstimos</p>
-  <div class="frame" data-screen-label="04 Meus empréstimos" style="min-height:820px;">
+<section class="view" id="s4" data-title="Meus empréstimos" hidden>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar-4"></aside>
       <div class="main">
@@ -276,15 +245,12 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- ============================================================ -->
 <!-- 05 · OPERAÇÕES -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s5">
-  <p class="frame-label">05 Operações — empréstimos em aberto</p>
-  <div class="frame" data-screen-label="05 Operações — empréstimos em aberto">
+<section class="view" id="s5" data-title="Empréstimos em aberto" hidden>
     <div class="app-shell tall">
       <aside class="sidebar" id="sidebar-5"></aside>
       <div class="main">
@@ -326,15 +292,12 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- ============================================================ -->
 <!-- 06 · CADASTRAR EQUIPAMENTO -->
 <!-- ============================================================ -->
-<div class="frame-wrap" id="s6">
-  <p class="frame-label">06 Operações — cadastrar equipamento</p>
-  <div class="frame" data-screen-label="06 Operações — cadastrar equipamento" style="min-height:820px;">
+<section class="view" id="s6" data-title="Cadastrar equipamento" hidden>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar-6"></aside>
       <div class="main">
@@ -420,8 +383,7 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+</section>
 
 <!-- biblioteca de autenticação (chave pública) + configuração + app -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
