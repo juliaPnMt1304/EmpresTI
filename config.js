@@ -16,4 +16,7 @@
    ========================================================================= */
 
 /* Sem arquivo local gerado, a aplicação não usa projeto remoto por acidente. */
-window.EMPRESTI_CONFIG = window.EMPRESTI_LOCAL_CONFIG || {};
+window.EMPRESTI_CONFIG = Object.assign({
+  supabaseUrl: 'https://fobuhqvjheblmwbiwera.supabase.co',
+  supabasePublishableKey: 'sb_publishable_COLE_SUA_CHAVE_AQUI'
+}, window.EMPRESTI_LOCAL_CONFIG || {});
