@@ -17,6 +17,6 @@
 
 /* Sem arquivo local gerado, a aplicação não usa projeto remoto por acidente. */
 window.EMPRESTI_CONFIG = Object.assign({
-  supabaseUrl: 'https://fobuhqvjheblmwbiwera.supabase.co',
+  supabaseUrl: 'https://supabase.com/dashboard/project/fobuhqvjheblmwbiwera/settings/api-keys',
   supabasePublishableKey: 'sb_secret_jMQm1-sNSLz_OfXL6ll3jg_X7HjDq6k'
 }, window.EMPRESTI_LOCAL_CONFIG || {});
