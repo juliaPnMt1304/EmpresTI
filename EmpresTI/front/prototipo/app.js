@@ -29,12 +29,6 @@ function initialsOf(name){
   return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
 }
 
-function escapeHtml(value){
-  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
-  });
-}
-
 function matchesQuery(query, values){
   const q = String(query || '').trim().toLowerCase();
   if(!q) return true;
@@ -65,10 +59,11 @@ function emptyState(text){
 /* ---------- 1 · configuração pública + cliente de autenticação ---------- */
 const CONFIG = window.EMPRESTI_CONFIG || {};
 const SUPA_LIB = window.supabase;
-const NETWORK_MSG = 'Não foi possível falar com o Supabase. Verifique a conexão e sirva a pasta por HTTP (ex.: npx serve .): abrir o arquivo direto (file://) pode ser bloqueado pelo navegador.';
+const NETWORK_MSG = 'Não foi possível falar com o Supabase. Verifique a conexão e sirva a pasta por HTTP (ex.: python -m http.server 8000); abrir o arquivo direto (file://) pode ser bloqueado pelo navegador.';
 
 let auth = null;
 let session = null;
+let currentProfile = null;
 
 function createAuthClient(){
   if(!SUPA_LIB || typeof SUPA_LIB.createClient !== 'function') return null;
@@ -76,26 +71,29 @@ function createAuthClient(){
   const authOptions = Object.assign({
     persistSession: false,      // proibido guardar sessão em localStorage/sessionStorage
     autoRefreshToken: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   }, CONFIG.auth || {});
   return SUPA_LIB.createClient(CONFIG.supabaseUrl, CONFIG.supabasePublishableKey, { auth: authOptions });
+}
+
+function authUnavailableMsg(){
+  if(!SUPA_LIB || typeof SUPA_LIB.createClient !== 'function')
+    return 'Autenticação indisponível: a biblioteca do Supabase não foi carregada. ' + NETWORK_MSG;
+  return 'Autenticação indisponível: faltam supabaseUrl/supabasePublishableKey em config.js.';
 }
 
 auth = createAuthClient();
 const AUTH_AVAILABLE = !!auth;
 
 /* ---------- 2 · regras de negócio (PRD) ---------- */
-const MAX_ITEMS = 3;            // máximo de itens simultâneos por colaborador
+const MAX_ITEMS = 5;            // máximo de itens simultâneos por colaborador
 const LOAN_DAYS = 14;           // prazo padrão de devolução
 const OPS_PAGE_SIZE = 7;        // linhas por página em Operações
 const TODAY_LABEL = '21/set';   // data de referência do protótipo (docs/layout.md)
 const DUE_LABEL = '05/out';     // TODAY_LABEL + LOAN_DAYS
 
-/* ---------- 3 · dados de exemplo ---------- */
-const DEMO_USER = {
-  colaborador: {initials:'MA', name:'Marina Alves', role:'Design'},
-  operacoes:   {initials:'OP', name:'Operações', role:'Balcão · 2º andar'},
-};
+/* Os dados do catálogo e empréstimos são carregados da sessão autenticada. */
+const DEMO_USER = { colaborador: {initials:'', name:'', role:'Colaborador'}, operacoes: {initials:'', name:'', role:'Operações'} };
 
 const SIDEBARS = [
   {id:'sidebar-2', active:'#s2', user:'colaborador'},
@@ -132,28 +130,10 @@ const OPS_CHIPS = {
 };
 
 const state = {
-  catalog: [
-    {icon:'i-laptop',  name:'MacBook Pro 14"',     meta:'Notebook · PAT-1042',  category:'Notebook',  pat:'PAT-1042', dueLabel:DUE_LABEL, state:'ok'},
-    {icon:'i-laptop',  name:'ThinkPad T14',        meta:'Notebook · PAT-1188',  category:'Notebook',  pat:'PAT-1188', state:'borrowed', with:'Camila Duarte', due:'16/set'},
-    {icon:'i-monitor', name:'Dell UltraSharp 27"', meta:'Monitor · PAT-0871',   category:'Monitor',   pat:'PAT-0871', state:'borrowed', with:'Você', due:'24/set'},
-    {icon:'i-monitor', name:'LG UltraFine 24"',    meta:'Monitor · PAT-0910',   category:'Monitor',   pat:'PAT-0910', state:'maint', note:'Aguardando peça'},
-    {icon:'i-camera',  name:'Sony A7 III',         meta:'Câmera · PAT-0233',    category:'Câmera',    pat:'PAT-0233', state:'borrowed', with:'Rafael Lima', due:'02/out'},
-    {icon:'i-usb',     name:'Dock USB-C Anker',    meta:'Acessório · PAT-0455', category:'Acessório', pat:'PAT-0455', state:'borrowed', with:'Você', due:'29/set'},
-  ],
-  loans: [
-    {icon:'i-monitor', name:'Dell UltraSharp 27"', pat:'PAT-0871', meta:'PAT-0871 · retirado em 10/set', dueLabel:'24/set', progress:0.79, late:false},
-    {icon:'i-usb',     name:'Dock USB-C Anker',    pat:'PAT-0455', meta:'PAT-0455 · retirado em 15/set', dueLabel:'29/set', progress:0.43, late:false},
-  ],
-  ops: [
-    {item:'Dell Latitude 5440',    pat:'PAT-1201', category:'Notebook',  person:'Lucas Ferraz',  out:'10/set', due:'24/set', state:'ok',   label:'No prazo', week:true},
-    {item:'ThinkPad T14',          pat:'PAT-1188', category:'Notebook',  person:'Camila Duarte', out:'02/set', due:'16/set', state:'late', label:'Atraso de 5 dias'},
-    {item:'Sony A7 III',           pat:'PAT-0233', category:'Câmera',     person:'Rafael Lima',   out:'18/set', due:'02/out', state:'ok',   label:'No prazo'},
-    {item:'Projetor Epson X49',    pat:'PAT-0102', category:'Projetor',   person:'Helena Prado',  out:'01/set', due:'15/set', state:'late', label:'Atraso de 6 dias'},
-    {item:'ThinkPad T14',          pat:'PAT-1190', category:'Notebook',  person:'Tiago Menezes', out:'30/ago', due:'13/set', state:'late', label:'Atraso de 8 dias'},
-    {item:'Headset Jabra Evolve',  pat:'PAT-0502', category:'Acessório',  person:'Ana Sato',      out:'15/set', due:'29/set', state:'ok',   label:'No prazo', week:true},
-    {item:'Adaptador HDMI Belkin', pat:'PAT-0338', category:'Acessório',  person:'Bruno Kato',    out:'19/set', due:'03/out', state:'ok',   label:'No prazo'},
-  ],
-  stats: {open:21, late:3},
+  catalog: [],
+  loans: [],
+  ops: [],
+  stats: {open:0, late:0},
   filters: {
     catalog: {chip:'Todos', onlyAvailable:false, query:''},
     ops:     {chip:'Todos', query:''},
@@ -168,7 +148,7 @@ function sessionUser(){
   if(!session || !session.user) return null;
   const user = session.user;
   const meta = user.user_metadata || {};
-  const label = meta.full_name || meta.name || user.email || 'Sessão ativa';
+  const label = (currentProfile && currentProfile.name) || meta.full_name || meta.name || user.email || 'Sessão ativa';
   return {
     initials: initialsOf(meta.full_name || meta.name || user.email),
     name: label,
@@ -177,10 +157,10 @@ function sessionUser(){
   };
 }
 
-/* Perfil: vem do JWT do Supabase (app_metadata.role, definido só pelo servidor).
-   user_metadata NÃO é usado: o próprio usuário consegue editá-lo (auth.updateUser)
-   e se promover a Operações. O papel real é o `memberships.role` (ADMIN =
-   Operações) e é imposto no servidor pelo tRPC — aqui só decide o que mostrar. */
+/* Perfil: vem do JWT do Supabase (app_metadata.role, definido só pelo servidor;
+   user_metadata.role como alternativa). O papel real é o `memberships.role`
+   (ADMIN = Operações) e é imposto no servidor pelo tRPC — aqui só decide o que
+   mostrar. */
 function isOps(){
   if(!session || !session.user) return false;
   const raw = (session.user.app_metadata && session.user.app_metadata.role) || '';
@@ -212,8 +192,8 @@ function renderSidebar(config){
     html += `</div>`;
   });
   html += `<div class="sidebar-user">
-      <div class="avatar">${escapeHtml(user.initials)}</div>
-      <div class="user-meta"><div class="name" title="${escapeHtml(user.email || '')}">${escapeHtml(user.name)}</div><div class="role">${escapeHtml(user.role)}</div></div>
+      <div class="avatar">${user.initials}</div>
+      <div class="user-meta"><div class="name" title="${user.email || ''}">${user.name}</div><div class="role">${user.role}</div></div>
       <button class="logout-btn" type="button" data-action="logout">Sair</button>
     </div>`;
   el.innerHTML = html;
@@ -241,7 +221,7 @@ function catalogCard(item){
   card.className = 'equip-card' + clickable;
   card.innerHTML = `
       <div class="equip-card-top">
-        <div class="equip-icon"><svg class="icon" width="20" height="20"><use href="#${item.icon}"/></svg></div>
+        <div class="equip-photo">${item.imageUrl ? `<img src="${item.imageUrl}" alt="Foto de ${item.name}" loading="lazy">` : `<svg class="icon" width="20" height="20"><use href="#${item.icon}"/></svg>`}</div>
         ${pill}
       </div>
       <p class="equip-name">${item.name}</p>
@@ -283,7 +263,7 @@ function renderCatalog(){
     const available = state.catalog.filter(function(item){ return item.state === 'ok'; }).length;
     count.textContent = filtered
       ? items.length + ' de ' + state.catalog.length + ' equipamentos · ' + available + ' disponíveis'
-      : state.examples.catalogCount;
+      : state.examples.catalogCount || (state.catalog.length + ' equipamentos · ' + state.catalog.filter(function(item){return item.state === 'ok';}).length + ' disponíveis agora');
   }
 
   syncChips('#s2 .chips-row', filter.chip, filter.onlyAvailable);
@@ -304,6 +284,12 @@ function renderDetail(){
   set('detail-due', item.dueLabel || DUE_LABEL);
   const icon = byId('detail-icon');
   if(icon) icon.setAttribute('href', '#' + item.icon);
+  const image = document.querySelector('.detail-image');
+  if(image) image.innerHTML = item.imageUrl ? `<img src="${item.imageUrl}" alt="Foto de ${item.name}">` : `<svg class="icon" width="64" height="64"><use href="#${item.icon}"/></svg>`;
+  const status = byId('detail-status');
+  if(status){ status.className = 'pill ' + (item.state === 'ok' ? 'pill-ok' : item.state === 'maint' ? 'pill-maint' : 'pill-borrowed'); status.textContent = item.state === 'ok' ? 'Disponível' : item.state === 'maint' ? 'Em manutenção' : 'Emprestado'; }
+  const requestButton = byId('open-dialog-btn');
+  if(requestButton) requestButton.disabled = item.state !== 'ok';
   // descrição e histórico de exemplo existem só para o MacBook Pro 14"
   const demo = item.pat === 'PAT-1042';
   set('detail-desc', demo ? DETAIL_DEMO_DESC : item.category + ' · ' + item.pat + '. A retirada é feita no balcão de Operações.');
@@ -334,8 +320,7 @@ function renderLoanRow(loan){
         <p class="lbl">Devolver até ${loan.dueLabel}</p>
         <div class="deadline-track"><div class="deadline-fill" style="width:${loan.progress * 100}%"></div></div>
       </div>
-      <button class="btn btn-row" type="button">Devolver</button>`;
-  row.querySelector('.btn-row').addEventListener('click', function(){ returnLoan(loan, row); });
+      <span class="pill pill-borrowed">Em aberto</span>`;
   return row;
 }
 
@@ -370,7 +355,7 @@ function renderLoanCounters(){
 
   const button = byId('open-dialog-btn');
   if(button){
-    const blocked = state.loans.length >= MAX_ITEMS || hasOverdue();
+    const blocked = state.loans.length >= MAX_ITEMS || hasOverdue() || !state.pendingItem || state.pendingItem.state !== 'ok';
     button.disabled = blocked;
     button.style.opacity = blocked ? '.45' : '';
   }
@@ -490,20 +475,8 @@ function returnOpRow(data, row){
     if(index > -1) state.ops.splice(index, 1);
     if(state.stats.open > 0) state.stats.open--;
     if(data.state === 'late' && state.stats.late > 0) state.stats.late--;
-    const item = state.catalog.find(function(entry){ return entry.pat === data.pat && entry.state === 'borrowed'; });
-    if(item){
-      item.state = 'ok';
-      item.dueLabel = DUE_LABEL;
-      delete item.with;
-      delete item.due;
-    }
-    const mine = state.loans.find(function(loan){ return loan.pat === data.pat; });
-    if(mine) state.loans.splice(state.loans.indexOf(mine), 1);
     renderOps();
     renderStats();
-    renderCatalog();
-    renderLoans();
-    renderSidebars();
   }, 200);
 }
 
@@ -512,6 +485,11 @@ function openLoanDialog(){
   const backdrop = byId('dialog-backdrop');
   const item = state.pendingItem;
   if(!backdrop || !item) return;
+
+  if(item.state !== 'ok'){
+    setMessage(byId('detail-message'), 'warn', 'Este equipamento não está disponível para solicitação.');
+    return;
+  }
 
   if(state.loans.length >= MAX_ITEMS){
     setMessage(byId('detail-message'), 'warn',
@@ -544,28 +522,29 @@ function closeLoanDialog(){
   if(backdrop) backdrop.classList.remove('open');
 }
 
-function confirmLoan(){
+async function confirmLoan(){
   const item = state.pendingItem;
-  closeLoanDialog();
-  if(!item || state.loans.length >= MAX_ITEMS || hasOverdue()) return;
-
-  state.loans.push({
-    icon: item.icon,
-    name: item.name,
-    pat: item.pat,
-    meta: item.pat + ' · retirado em ' + TODAY_LABEL,
-    dueLabel: item.dueLabel || DUE_LABEL,
-    progress: 0.12,
-    late: false,
-  });
-  item.state = 'borrowed';
-  item.with = 'Você';
-  item.due = item.dueLabel;
-
-  renderCatalog();
-  renderLoans();
-  renderSidebars();
-  location.hash = '#s4';
+  if(!item || !item.id || !auth) return;
+  const message = byId('detail-message');
+  const confirm = byId('dialog-confirm');
+  if(confirm) confirm.disabled = true;
+  try {
+    const result = await auth.rpc('solicitar_emprestimo', {p_equipment_id: item.id});
+    if(result.error){
+      const code = result.error.message || '';
+      const text = code.includes('LIMITE_DE_5') ? 'Limite de 5 empréstimos em aberto atingido.'
+        : code.includes('DEVOLUCAO_EM_ATRASO') ? 'Uma devolução está atrasada; regularize antes de pedir outro item.'
+        : code.includes('EQUIPAMENTO_INDISPONIVEL') || code.includes('EQUIPAMENTO_JA_EMPRESTADO') ? 'Este equipamento não está mais disponível.'
+        : 'Não foi possível solicitar o empréstimo. Tente novamente.';
+      closeLoanDialog(); setMessage(message, 'error', text); await loadSessionData(); return;
+    }
+    closeLoanDialog();
+    await loadSessionData();
+    renderCatalog(); renderLoans(); renderSidebars();
+    location.hash = '#s4';
+  } catch(error) {
+    setMessage(message, 'error', 'Falha ao registrar a solicitação. Confira a conexão local e tente de novo.');
+  } finally { if(confirm) confirm.disabled = false; }
 }
 
 /* ---------- 10 · cadastro de equipamento (tela 06) ---------- */
@@ -601,16 +580,6 @@ function submitRegister(another){
   }
   if(!/^PAT-\d{3,}$/i.test(pat)){
     setMessage(message, 'error', 'Patrimônio no formato PAT-0000.');
-    const el = byId('reg-pat');
-    if(el) el.focus();
-    return;
-  }
-
-  const key = pat.toUpperCase();
-  const taken = state.catalog.some(function(item){ return item.pat === key; }) ||
-                state.ops.some(function(row){ return row.pat === key; });
-  if(taken){
-    setMessage(message, 'error', 'Patrimônio ' + key + ' já existe. O patrimônio é único por tenant.');
     const el = byId('reg-pat');
     if(el) el.focus();
     return;
@@ -667,6 +636,13 @@ function resolveRoute(){
 }
 
 function route(){
+  if(location.hash === '#signup'){
+    history.replaceState(null, '', LOGIN_ROUTE);
+    showAuthMode('signup');
+  } else if(location.hash === '#login'){
+    history.replaceState(null, '', LOGIN_ROUTE);
+    showAuthMode('login');
+  }
   const target = resolveRoute();
   if(location.hash !== target){
     // replace: não deixa a tela barrada no histórico do botão "voltar"
@@ -681,6 +657,49 @@ function route(){
     const email = byId('login-email');
     if(email && !email.value) email.focus();
   }
+}
+
+function formatDate(value){
+  return new Intl.DateTimeFormat('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'}).format(new Date(value));
+}
+
+async function loadSessionData(){
+  if(!auth || !session || !session.user) return;
+  const profileResult = await auth.from('users').select('id,name,department').eq('auth_user_id', session.user.id).maybeSingle();
+  if(profileResult.error || !profileResult.data) throw profileResult.error || new Error('Perfil ainda não foi criado.');
+  currentProfile = profileResult.data;
+  const catalogResult = await auth.rpc('catalogo_equipamentos');
+  if(catalogResult.error) throw catalogResult.error;
+  const loansResult = await auth.from('loans').select('id,equipment_id,borrowed_at,due_date').eq('user_id', currentProfile.id).is('returned_at', null).order('borrowed_at', {ascending:false});
+  if(loansResult.error) throw loansResult.error;
+  const labels = {NOTEBOOK:'Notebook', MONITOR:'Monitor', CAMERA:'Câmera', ACCESSORY:'Acessório', PROJECTOR:'Projetor'};
+  const icons = {NOTEBOOK:'i-laptop', MONITOR:'i-monitor', CAMERA:'i-camera', ACCESSORY:'i-usb', PROJECTOR:'i-projector'};
+  const openLoans = loansResult.data || [];
+  state.catalog = (catalogResult.data || []).map(function(row){
+    const category = labels[row.category] || row.category;
+    const itemLoan = row.is_loaned ? (openLoans.find(function(loan){return loan.equipment_id === row.id;}) || null) : null;
+    return {id:row.id, icon:icons[row.category] || 'i-package', name:row.name, meta:category + ' · ' + row.patrimony,
+      category, pat:row.patrimony, imageUrl:row.image_url, dueLabel:formatDate(Date.now() + 14*86400000),
+      state:row.status === 'MAINTENANCE' ? 'maint' : row.is_loaned ? 'borrowed' : 'ok',
+      with:itemLoan ? 'Você' : 'Outra pessoa', due:row.due_date ? formatDate(row.due_date) : '', note:'Não disponível para solicitação'};
+  });
+  state.loans = openLoans.map(function(loan){
+    const item = state.catalog.find(function(row){return row.id === loan.equipment_id;}) || {};
+    const due = new Date(loan.due_date);
+    return {id:loan.id, icon:item.icon || 'i-package', name:item.name || 'Equipamento', pat:item.pat || '',
+      meta:item.pat + ' · retirado em ' + formatDate(loan.borrowed_at), dueLabel:formatDate(loan.due_date),
+      progress:0.35, late:due.getTime() < Date.now()};
+  });
+  const count = byId('catalog-count');
+  state.examples.catalogCount = state.catalog.length + ' equipamentos · ' + state.catalog.filter((x)=>x.state === 'ok').length + ' disponíveis agora';
+  if(count) count.textContent = state.examples.catalogCount;
+  const maintenance = state.catalog.filter((x)=>x.state === 'maint').length;
+  const maintenanceStat = document.querySelector('#s5 .stat-card:nth-child(4) .val');
+  if(maintenanceStat) maintenanceStat.textContent = String(maintenance);
+  const header = document.querySelector('#s2 .header-meta');
+  if(header) header.textContent = state.loans.length + ' de ' + MAX_ITEMS + ' itens com você';
+  state.pendingItem = state.catalog.find((item)=>item.state === 'ok') || state.catalog[0] || null;
+  renderCatalog(); renderLoans(); renderSidebars(); renderDetail();
 }
 
 function applySession(){
@@ -706,7 +725,7 @@ async function handleLogin(event){
     return;
   }
   if(!AUTH_AVAILABLE){
-    setMessage(message, 'error', 'Autenticação indisponível: a biblioteca do Supabase não foi carregada. ' + NETWORK_MSG);
+    setMessage(message, 'error', authUnavailableMsg());
     return;
   }
 
@@ -721,11 +740,108 @@ async function handleLogin(event){
     session = result.data.session || null;
     if(senhaEl) senhaEl.value = '';
     setMessage(message, '', '');
-    applySession();   // com sessão ativa, o roteador leva ao catálogo
+    await loadSessionData();
+    applySession();
   } catch (error) {
     setMessage(message, 'error', isNetworkError(error)
       ? NETWORK_MSG
       : 'Falha inesperada ao entrar: ' + ((error && error.message) || error));
+  } finally {
+    if(submit) submit.disabled = false;
+  }
+}
+
+function showAuthMode(mode){
+  const signup = mode === 'signup';
+  const loginForm = byId('login-form');
+  const signupForm = byId('signup-form');
+  const heading = byId('auth-heading');
+  const subtitle = byId('auth-subtitle');
+  if(loginForm) loginForm.hidden = signup;
+  if(signupForm) signupForm.hidden = !signup;
+  if(byId('show-signup-wrap')) byId('show-signup-wrap').hidden = signup;
+  if(byId('show-login-wrap')) byId('show-login-wrap').hidden = !signup;
+  if(heading) heading.textContent = signup ? 'Criar conta' : 'Entrar';
+  if(subtitle) subtitle.textContent = signup
+    ? 'Preencha seus dados para acessar o sistema.'
+    : 'Use seu e-mail para acessar o sistema.';
+
+  const fromEmail = byId(signup ? 'login-email' : 'signup-email');
+  const toEmail = byId(signup ? 'signup-email' : 'login-email');
+  if(fromEmail && toEmail && fromEmail.value && !toEmail.value) toEmail.value = fromEmail.value;
+  setMessage(byId('login-message'), '', '');
+  setMessage(byId('signup-message'), '', '');
+  const firstField = byId(signup ? 'signup-name' : 'login-email');
+  if(firstField) firstField.focus();
+}
+
+async function handleSignup(event){
+  if(event) event.preventDefault();
+  const message = byId('signup-message');
+  const name = fieldValue('signup-name');
+  const email = fieldValue('signup-email');
+  const password = byId('signup-password') ? byId('signup-password').value : '';
+  const confirm = byId('signup-password-confirm') ? byId('signup-password-confirm').value : '';
+  const submit = byId('signup-submit');
+
+  if(!name || !email || !password || !confirm){
+    setMessage(message, 'warn', 'Preencha todos os campos.');
+    return;
+  }
+  if(!EMAIL_RE.test(email)){
+    setMessage(message, 'warn', 'E-mail inválido. Confira o endereço digitado.');
+    return;
+  }
+  if(password !== confirm){
+    setMessage(message, 'warn', 'As senhas não coincidem.');
+    return;
+  }
+  if(!AUTH_AVAILABLE){
+    setMessage(message, 'error', authUnavailableMsg());
+    return;
+  }
+
+  if(submit) submit.disabled = true;
+  setMessage(message, 'info', 'Criando sua conta…');
+  try {
+    const result = await auth.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {full_name: name},
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if(result.error){
+      const code = result.error.code || result.error.error_code || '';
+      let detail = result.error.message || 'erro desconhecido';
+      if(code === 'weak_password') detail = 'A senha não atende aos requisitos do Supabase.';
+      if(code === 'email_address_not_authorized'){
+        detail = 'O Supabase não pode enviar confirmação para esse endereço pelo provedor de e-mail atual. Configure um SMTP para enviar e-mails aos usuários.';
+      }
+      if(code === 'over_email_send_rate_limit') detail = 'O limite de envio de e-mails foi atingido. Aguarde e tente novamente.';
+      setMessage(message, 'error', isNetworkError(result.error)
+        ? NETWORK_MSG
+        : 'Não foi possível criar a conta: ' + detail);
+      return;
+    }
+
+    const signupPassword = byId('signup-password');
+    const signupConfirm = byId('signup-password-confirm');
+    if(signupPassword) signupPassword.value = '';
+    if(signupConfirm) signupConfirm.value = '';
+    session = result.data.session || null;
+    if(session){
+      setMessage(message, '', '');
+      await loadSessionData();
+      applySession();
+    } else {
+      setMessage(message, 'ok', 'Conta criada. Confirme seu e-mail pelo link enviado; ao confirmar, você voltará para o sistema.');
+    }
+  } catch (error) {
+    setMessage(message, 'error', isNetworkError(error)
+      ? NETWORK_MSG
+      : 'Falha inesperada ao criar a conta: ' + ((error && error.message) || error));
   } finally {
     if(submit) submit.disabled = false;
   }
@@ -738,6 +854,8 @@ async function handleLogout(){
     /* a sessão em memória é descartada logo abaixo de qualquer forma */
   }
   session = null;
+  currentProfile = null;
+  state.catalog = []; state.loans = [];
   applySession();   // sem sessão, o roteador volta ao login
   setMessage(byId('login-message'), 'info', 'Sessão encerrada.');
 }
@@ -824,6 +942,18 @@ function wireDialog(){
 function wireNavigation(){
   const loginForm = byId('login-form');
   if(loginForm) loginForm.addEventListener('submit', handleLogin);
+  const signupForm = byId('signup-form');
+  if(signupForm) signupForm.addEventListener('submit', handleSignup);
+  const showSignup = byId('show-signup');
+  if(showSignup) showSignup.addEventListener('click', function(event){
+    event.preventDefault();
+    showAuthMode('signup');
+  });
+  const showLogin = byId('show-login');
+  if(showLogin) showLogin.addEventListener('click', function(event){
+    event.preventDefault();
+    showAuthMode('login');
+  });
   document.addEventListener('click', function(event){
     const btn = event.target.closest && event.target.closest('[data-action="logout"]');
     if(btn) handleLogout();
@@ -854,7 +984,6 @@ function boot(){
   renderLoanCounters();
   renderDetail();
   updatePreview();
-  applySession();
 
   wireChips();
   wireSearch();
@@ -865,19 +994,21 @@ function boot(){
   if(auth){
     auth.auth.onAuthStateChange(function(event, nextSession){
       session = nextSession || null;
-      applySession();
+      if(session) loadSessionData().then(applySession).catch(function(error){ setMessage(byId('login-message'), 'error', 'Falha ao carregar seus dados locais: ' + (error.message || error)); applySession(); });
+      else { currentProfile = null; state.catalog = []; state.loans = []; renderCatalog(); renderLoans(); applySession(); }
     });
     auth.auth.getSession().then(function(result){
-      if(result && result.data && result.data.session){
-        session = result.data.session;
-        applySession();
-      }
+      session = result && result.data ? result.data.session || null : null;
+      if(session) return loadSessionData().then(applySession).catch(function(error){ setMessage(byId('login-message'), 'error', 'Falha ao carregar seus dados locais: ' + (error.message || error)); applySession(); });
+      applySession();
     }).catch(function(){
-      /* persistSession:false — não há sessão antiga para restaurar */
+      /* Mesmo sem sessão, mostra o login depois da inicialização do Auth. */
+      applySession();
     });
   } else {
+    applySession();
     setMessage(byId('login-message'), 'info',
-      'Autenticação indisponível: não foi possível carregar a biblioteca do Supabase. ' + NETWORK_MSG);
+      authUnavailableMsg());
   }
 }
 
