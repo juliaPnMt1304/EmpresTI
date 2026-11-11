@@ -5,7 +5,7 @@
    chave PÚBLICA do Supabase (as mesmas `NEXT_PUBLIC_*` do .env).
 
    NUNCA coloque aqui a SUPABASE_SERVICE_ROLE_KEY: ela ignora o RLS e este
-   arquivo é baixado por qualquer visitante (rules/secrets.md).
+   arquivo é baixado por qualquer visitante (restrictions.md · Segurança).
    Operação administrativa é código de servidor (Route Handler),
    nunca front-end.
 
@@ -15,23 +15,11 @@
    (a chave publicável `sb_publishable_…` substitui a anon key antiga)
    ========================================================================= */
 
-window.EMPRESTI_CONFIG = {
-  /* Supabase · Project Settings > Data API > Project URL */
+/* Valores públicos do projeto Supabase usados em produção (Vercel).
+   config.local.js (não versionado) ainda pode sobrescrever tudo isto em dev.
+   >>> Cole abaixo a chave publicável (Supabase > Settings > API Keys >
+   "Publishable key", começa com sb_publishable_). Ela é pública por design. */
+window.EMPRESTI_CONFIG = Object.assign({
   supabaseUrl: 'https://fobuhqvjheblmwbiwera.supabase.co',
-
-  /* Supabase · Project Settings > API Keys > publishable key.
-     Chave pública: pode ir para o navegador porque quem protege o dado é o
-     RLS + os middlewares do tRPC, não o segredo da chave. */
-  supabasePublishableKey: 'sb_publishable_Vz7D8Y9J-MNR6Ncec2-HSg_nvP0duh-',
-
-  /* Opções do cliente de autenticação.
-     persistSession:false — a sessão vive em memória enquanto a página está
-     aberta e NUNCA é gravada em localStorage/sessionStorage
-     (rules/arquitetura.md: sessão é cookie httpOnly do @supabase/ssr
-     na aplicação Next.js; aqui, num protótipo estático, fica só em memória). */
-  auth: {
-    persistSession: false,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
-};
+  supabasePublishableKey: ''
+}, window.EMPRESTI_LOCAL_CONFIG || {});
