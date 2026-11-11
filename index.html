@@ -51,7 +51,7 @@
           <p>Empréstimo interno de notebooks, monitores e acessórios para o time.</p>
           <div class="rule-mark"></div>
           <div class="hero-stats">
-            <div class="hero-stat"><p class="num">3</p><p class="label">itens por pessoa</p></div>
+            <div class="hero-stat"><p class="num">5</p><p class="label">itens por pessoa</p></div>
             <div class="hero-stat"><p class="num">14</p><p class="label">dias de prazo</p></div>
           </div>
         </div>
@@ -121,19 +121,19 @@
         <header class="app-header">
           <label class="search"><svg class="icon" width="15" height="15"><use href="#i-search"/></svg><input class="search-input" id="catalog-search" type="search" placeholder="Buscar equipamento…" aria-label="Buscar equipamento"></label>
           <div class="header-spacer"></div>
-          <span class="header-meta">2 de 3 itens com você</span>
+          <span class="header-meta">0 de 5 itens com você</span>
           <button class="bell"><svg class="icon" width="17" height="17"><use href="#i-bell"/></svg></button>
         </header>
         <div class="content">
           <div class="page-title">
             <h1>Catálogo</h1>
-            <span class="page-count" id="catalog-count">32 equipamentos · 11 disponíveis agora</span>
+            <span class="page-count" id="catalog-count">Carregando equipamentos…</span>
           </div>
           <div class="warning-banner">
             <svg class="icon" width="17" height="17"><use href="#i-info"/></svg>
             <div>
               <p class="wb-title">Antes de solicitar</p>
-              <p class="wb-body">Limite de 3 itens por pessoa. Prazo padrão de 14 dias. Empréstimos em atraso bloqueiam novas solicitações. Itens em manutenção não aparecem disponíveis.</p>
+              <p class="wb-body">Limite de 5 itens por pessoa. Prazo padrão de 14 dias corridos. Empréstimos em atraso bloqueiam novas solicitações. Itens em manutenção não aparecem disponíveis.</p>
             </div>
           </div>
           <div class="chips-row">
@@ -167,7 +167,7 @@
             <span class="current" id="detail-crumb-name">MacBook Pro 14"</span>
           </div>
           <div class="header-spacer"></div>
-          <span class="header-meta">2 de 3 itens com você</span>
+          <span class="header-meta">0 de 5 itens com você</span>
         </header>
         <div class="content">
           <div class="detail-grid">
@@ -175,13 +175,13 @@
               <div class="detail-image"><svg class="icon" width="64" height="64"><use id="detail-icon" href="#i-laptop"/></svg></div>
               <div class="detail-title-row">
                 <h1 id="detail-name">MacBook Pro 14"</h1>
-                <span class="pill pill-ok">Disponível</span>
+              <span class="pill pill-ok" id="detail-status">Disponível</span>
               </div>
               <p class="detail-desc" id="detail-desc">Notebook de alta performance para desenvolvimento e edição. Acompanha carregador USB-C original. Recomendado para uso em escritório e viagens curtas.</p>
               <div class="rule"></div>
               <div class="spec-grid">
                 <div class="spec-item"><p class="label">Categoria</p><p class="value" id="detail-cat">Notebook</p></div>
-                <div class="spec-item"><p class="label">Patrimônio</p><p class="value" id="detail-pat">PAT-1042</p></div>
+                <div class="spec-item"><p class="label">Patrimônio</p><p class="value" id="detail-pat">TI-0001</p></div>
                 <div class="spec-item"><p class="label">Local</p><p class="value">Balcão · 2º andar</p></div>
                 <div class="spec-item"><p class="label">Última devolução</p><p class="value">02/set</p></div>
               </div>
@@ -197,7 +197,7 @@
             <div style="display:flex; flex-direction:column; gap:16px;">
               <div class="side-card">
                 <h3>Solicitar empréstimo</h3>
-                <div class="side-row"><span>Retirada</span><span class="val">Hoje, 21/set</span></div>
+                <div class="side-row"><span>Retirada</span><span class="val">Hoje</span></div>
                 <div class="side-row"><span>Prazo padrão</span><span class="val">14 dias</span></div>
                 <div class="side-row"><span>Devolver até</span><span class="val accent" id="detail-due">05/out</span></div>
                 <button class="btn btn-primary" style="width:100%;" id="open-dialog-btn">Solicitar empréstimo</button>
@@ -205,7 +205,7 @@
               </div>
               <div class="side-card">
                 <h3>Seus itens</h3>
-                <div class="side-row"><span>Em uso</span><span class="val" id="detail-items-count">2 de 3</span></div>
+                <div class="side-row"><span>Em uso</span><span class="val" id="detail-items-count">0 de 5</span></div>
                 <div class="limit-segments"><div class="limit-seg filled"></div><div class="limit-seg filled"></div><div class="limit-seg"></div></div>
                 <p class="side-note" id="detail-side-note">Este pedido levará você a 3 de 3 itens.</p>
                 <div class="form-message" id="detail-message" role="status" aria-live="polite" hidden></div>
@@ -244,7 +244,7 @@
           <div class="loans-head">
             <div>
               <h2>Comigo agora</h2>
-              <p class="sub" id="loans-sub">2 de 3 itens · nenhum em atraso</p>
+              <p class="sub" id="loans-sub">0 de 5 itens · nenhum em atraso</p>
             </div>
             <div class="segwrap">
               <div class="limit-segments"><div class="limit-seg filled"></div><div class="limit-seg filled"></div><div class="limit-seg"></div></div>
@@ -257,15 +257,7 @@
             <div class="t-row t-head" style="grid-template-columns:2fr 1fr 1fr 1fr;">
               <span>Item</span><span>Retirada</span><span>Devolução</span><span>Situação</span>
             </div>
-            <div class="t-row t-body-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
-              <span>Dock USB-C Anker</span><span style="color:#7C86A2">20/ago</span><span style="color:#7C86A2">28/ago</span><span style="color:#5FD3AA">No prazo</span>
-            </div>
-            <div class="t-row t-body-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
-              <span>ThinkPad T14</span><span style="color:#7C86A2">02/jul</span><span style="color:#7C86A2">20/jul</span><span style="color:#E08A90">Atraso de 3 dias</span>
-            </div>
-            <div class="t-row t-body-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
-              <span>Adaptador HDMI Belkin</span><span style="color:#7C86A2">10/jun</span><span style="color:#7C86A2">17/jun</span><span style="color:#5FD3AA">No prazo</span>
-            </div>
+            <div class="t-row t-body-row" style="grid-template-columns:1fr; color:#7C86A2;">Nenhum histórico nesta conta.</div>
           </div>
         </div>
       </div>
@@ -412,7 +404,8 @@
 
 <!-- biblioteca de autenticação (chave pública) + configuração + app -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="config.js?v=20261110"></script>
-<script src="app.js?v=20261110"></script>
+<script src="config.local.js"></script>
+<script src="config.js?v=20261111"></script>
+<script src="app.js?v=20261111"></script>
 </body>
 </html>

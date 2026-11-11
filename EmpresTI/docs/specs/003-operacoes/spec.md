@@ -13,7 +13,7 @@ equipamentos, sem depender da planilha.
 
 ## Regras
 - Só o papel `ADMIN` (Operações) acessa estas telas e procedimentos.
-- Patrimônio no formato `PAT-0000` e único por tenant (`@@unique([tenantId, patrimony])`).
+- Patrimônio no formato `TI-0000` e único por tenant (`@@unique([tenantId, patrimony])`).
 - Ações de escrita geram registro em `audit_logs` (append-only, ADR-001 §10).
 
 ## Critérios de aceitação
@@ -21,7 +21,7 @@ equipamentos, sem depender da planilha.
 |----|------|----------|
 | CA-12 | [front][back] | Operações vê todos os empréstimos em aberto, com filtros (Em atraso, Vencem esta semana, Notebooks) e busca; busca sem resultado mostra estado vazio. |
 | CA-13 | [front][back] | Registrar devolução no balcão reduz "abertos" em 1 (e "atrasos" em 1 se estava atrasado) e devolve o item ao catálogo como Disponível. |
-| CA-14 | [front][back] | O cadastro exige nome, patrimônio `PAT-0000` e barra patrimônio duplicado. |
+| CA-14 | [front][back] | O cadastro exige nome, patrimônio `TI-0000` e barra patrimônio duplicado. |
 | CA-15 | [back] | Equipamento cadastrado é persistido no tenant da sessão, com registro em `audit_logs`; situação "Manutenção"/"Fora de uso" respeita CA-04 da spec 001. |
 
 ## Fora de escopo

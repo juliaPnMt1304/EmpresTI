@@ -4,7 +4,7 @@ Uma tarefa por commit (`rules/operacao.md`). Status: ✅ feita · ⬜ pendente �
 
 | ID | Tarefa | CA | Lado | Status |
 |----|--------|----|------|--------|
-| T0 | Protótipo: catálogo, solicitação, devolução, limite, atraso, manutenção, prazo de 14 dias (`front/prototipo`) + testes `test_ca_01..06` | CA-01…06 | front | ✅ |
+| T0 | Protótipo: catálogo, solicitação, devolução, limite 5, atraso, manutenção, prazo de 14 dias corridos (`front/prototipo`) + testes `test_ca_01..06` | CA-01…06 | front | ✅ |
 | T1 | Aprovar o DDL da migration `0002` (índice parcial + CHECK) e gerá-la | CA-05 | back | ⏸ |
 | T2 | Instalar o app Next + tRPC + `tenantProcedure` (scaffold: mostrar o que será criado) | todos [back] | back | ⏸ ADR/plano aprovado |
 | T3 | `loan.request` com regras de limite de 3, atraso, status e prazo + testes (Testcontainers) | CA-01, 02, 03, 04, 05 | back | ⬜ |

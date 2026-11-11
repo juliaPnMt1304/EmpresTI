@@ -15,8 +15,8 @@ devolve o que está com ele, respeitando as regras de Operações.
 - Dados: `Equipment`, `Loan` (`prisma/schema.prisma`).
 
 ## Regras
-- Máximo de 3 itens simultâneos por colaborador.
-- Prazo padrão de devolução: 14 dias (retirada + 14 dias).
+- Máximo de 5 itens simultâneos por colaborador.
+- Prazo padrão de devolução: 14 dias corridos (retirada + 14 dias).
 - Colaborador com item em atraso (aberto e `dueDate` vencido) não solicita novo empréstimo.
 - Equipamento em manutenção nunca aparece como disponível; "Emprestado" deriva de empréstimo
   aberto (`returnedAt` nulo), não é status armazenado.
@@ -24,8 +24,8 @@ devolve o que está com ele, respeitando as regras de Operações.
 ## Critérios de aceitação
 | ID | Lado | Critério |
 |----|------|----------|
-| CA-01 | [front][back] | Solicitar um item Disponível cria um empréstimo aberto com devolução prevista em retirada + 14 dias; o item passa a Emprestado. |
-| CA-02 | [front][back] | Com 3 itens em aberto, o colaborador não consegue solicitar o 4º (botão bloqueado e aviso na tela; recusa no servidor). |
+| CA-01 | [front][back] | Solicitar um item Disponível cria um empréstimo aberto com devolução prevista em retirada + 14 dias corridos; o item passa a Emprestado. |
+| CA-02 | [front][back] | Com 5 itens em aberto, o colaborador não consegue solicitar o 6º (botão bloqueado e aviso na tela; recusa no servidor). |
 | CA-03 | [front][back] | Com algum item em atraso, o colaborador não consegue solicitar novo empréstimo. |
 | CA-04 | [front][back] | Equipamento em manutenção nunca aparece como Disponível (nem no filtro "Só disponíveis"). |
 | CA-05 | [front][back] | Um equipamento tem no máximo um empréstimo aberto; item emprestado não pode ser solicitado por outra pessoa. |
@@ -43,8 +43,7 @@ equipamento (spec 003); login e perfis (spec 002).
   catálogo, solicitar e devolver, todos sob `tenantProcedure`.
 
 ## Perguntas em aberto (decisão do time)
-1. O prazo conta dias corridos ou úteis? E "em atraso" começa à meia-noite do dia seguinte ao
-   `dueDate` ou no instante exato?
+1. "Em atraso" começa à meia-noite do dia seguinte ao `dueDate` ou no instante exato?
 2. Item em atraso de outra pessoa: o colaborador vê "Emprestado · devolve dd/mm" ou "Atrasado"?
 3. Quem pode devolver um item de outra pessoa: só Operações (spec 003) ou também o próprio
    colaborador por engano? (O PRD só diz "devolver um item que está comigo".)

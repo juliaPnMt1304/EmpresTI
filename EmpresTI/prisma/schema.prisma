@@ -9,7 +9,7 @@
 //   (:5432) é exclusivo de migration.
 //
 // Regras de negócio do PRD e onde vivem (service + Zod, não no banco):
-//   1. Máximo de 3 itens simultâneos por colaborador → count de empréstimos
+//   1. Máximo de 5 itens simultâneos por colaborador → count de empréstimos
 //      abertos do usuário no tenant (índice [tenantId, userId, returnedAt]).
 //   2. Prazo padrão de 14 dias → Loan.dueDate calculado no service ao abrir
 //      o empréstimo (borrowedAt + 14d); sem default mágico no banco.
@@ -148,6 +148,8 @@ model Equipment {
   status       EquipmentStatus   @default(AVAILABLE)
   /// Observações internas do cadastro.
   notes        String?
+  /// Imagem pública do catálogo no Supabase Storage.
+  imageUrl     String?           @map("image_url")
   createdAt    DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
@@ -188,7 +190,7 @@ model Loan {
   equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
   user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
 
-  /// "Meus empréstimos" + contagem do limite de 3 (regra 1).
+  /// "Meus empréstimos" + contagem do limite de 5 (regra 1).
   @@index([tenantId, userId, returnedAt])
   /// Tela de Operações: abertos, atrasados e "vencem em N dias".
   @@index([tenantId, returnedAt, dueDate])

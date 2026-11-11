@@ -14,16 +14,17 @@ registrada se alguém lembrar de atualizar a linha.
 
 ## O que precisa existir na primeira versão
 1. Login. Cada pessoa vê os próprios empréstimos.
-2. Catálogo de equipamentos com a situação de cada um.
+2. Catálogo com a situação e foto dos 12 equipamentos iniciais.
 3. Solicitar empréstimo de um item disponível.
 4. Devolver um item que está comigo.
 5. Tela de Operações com todos os empréstimos em aberto.
 
 ## Regras que Operações já decidiu
-- Cada pessoa pode estar com no máximo 3 itens ao mesmo tempo.
-- O prazo padrão de devolução é de 14 dias.
+- Cada pessoa pode estar com no máximo 5 itens ao mesmo tempo.
+- O prazo padrão de devolução é de 14 dias corridos.
 - Quem tem item em atraso não pode pegar outro emprestado.
 - Equipamento em manutenção não aparece como disponível.
+- Cadastro e autenticação de colaboradores ficam no Supabase Auth local para esta entrega.
 
 ## O que NÃO entra nesta versão
 - Reserva com data futura.

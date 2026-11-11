@@ -63,6 +63,7 @@ const NETWORK_MSG = 'Não foi possível falar com o Supabase. Verifique a conex�
 
 let auth = null;
 let session = null;
+let currentProfile = null;
 
 function createAuthClient(){
   if(!SUPA_LIB || typeof SUPA_LIB.createClient !== 'function') return null;
@@ -79,17 +80,14 @@ auth = createAuthClient();
 const AUTH_AVAILABLE = !!auth;
 
 /* ---------- 2 · regras de negócio (PRD) ---------- */
-const MAX_ITEMS = 3;            // máximo de itens simultâneos por colaborador
+const MAX_ITEMS = 5;            // máximo de itens simultâneos por colaborador
 const LOAN_DAYS = 14;           // prazo padrão de devolução
 const OPS_PAGE_SIZE = 7;        // linhas por página em Operações
 const TODAY_LABEL = '21/set';   // data de referência do protótipo (docs/layout.md)
 const DUE_LABEL = '05/out';     // TODAY_LABEL + LOAN_DAYS
 
-/* ---------- 3 · dados de exemplo ---------- */
-const DEMO_USER = {
-  colaborador: {initials:'MA', name:'Marina Alves', role:'Design'},
-  operacoes:   {initials:'OP', name:'Operações', role:'Balcão · 2º andar'},
-};
+/* Os dados do catálogo e empréstimos são carregados da sessão autenticada. */
+const DEMO_USER = { colaborador: {initials:'', name:'', role:'Colaborador'}, operacoes: {initials:'', name:'', role:'Operações'} };
 
 const SIDEBARS = [
   {id:'sidebar-2', active:'#s2', user:'colaborador'},
@@ -126,28 +124,10 @@ const OPS_CHIPS = {
 };
 
 const state = {
-  catalog: [
-    {icon:'i-laptop',  name:'MacBook Pro 14"',     meta:'Notebook · PAT-1042',  category:'Notebook',  pat:'PAT-1042', dueLabel:DUE_LABEL, state:'ok'},
-    {icon:'i-laptop',  name:'ThinkPad T14',        meta:'Notebook · PAT-1188',  category:'Notebook',  pat:'PAT-1188', state:'borrowed', with:'Camila Duarte', due:'27/set'},
-    {icon:'i-monitor', name:'Dell UltraSharp 27"', meta:'Monitor · PAT-0871',   category:'Monitor',   pat:'PAT-0871', dueLabel:DUE_LABEL, state:'ok'},
-    {icon:'i-monitor', name:'LG UltraFine 24"',    meta:'Monitor · PAT-0910',   category:'Monitor',   pat:'PAT-0910', state:'maint', note:'Aguardando peça'},
-    {icon:'i-camera',  name:'Sony A7 III',         meta:'Câmera · PAT-0233',    category:'Câmera',    pat:'PAT-0233', state:'borrowed', with:'Rafael Lima', due:'02/out'},
-    {icon:'i-usb',     name:'Dock USB-C Anker',    meta:'Acessório · PAT-0455', category:'Acessório', pat:'PAT-0455', dueLabel:DUE_LABEL, state:'ok'},
-  ],
-  loans: [
-    {icon:'i-monitor', name:'Dell UltraSharp 27"', pat:'PAT-0871', meta:'PAT-0871 · retirado em 10/set', dueLabel:'28/set', progress:0.5},
-    {icon:'i-usb',     name:'Dock USB-C Anker',    pat:'PAT-0455', meta:'PAT-0455 · retirado em 15/set', dueLabel:'05/out', progress:0.3},
-  ],
-  ops: [
-    {item:'MacBook Pro 14"',       pat:'PAT-1042', category:'Notebook',  person:'Marina Alves',  out:'10/set', due:'24/set', state:'ok',   label:'No prazo', week:true},
-    {item:'ThinkPad T14',          pat:'PAT-1188', category:'Notebook',  person:'Camila Duarte', out:'02/set', due:'16/set', state:'late', label:'Atraso de 5 dias'},
-    {item:'Sony A7 III',           pat:'PAT-0233', category:'Câmera',     person:'Rafael Lima',   out:'18/set', due:'02/out', state:'ok',   label:'No prazo'},
-    {item:'Projetor Epson X49',    pat:'PAT-0102', category:'Projetor',   person:'Helena Prado',  out:'01/set', due:'15/set', state:'late', label:'Atraso de 6 dias'},
-    {item:'ThinkPad T14',          pat:'PAT-1190', category:'Notebook',  person:'Tiago Menezes', out:'30/ago', due:'13/set', state:'late', label:'Atraso de 8 dias'},
-    {item:'Dock USB-C Anker',      pat:'PAT-0455', category:'Acessório',  person:'Ana Sato',      out:'15/set', due:'29/set', state:'ok',   label:'No prazo', week:true},
-    {item:'Adaptador HDMI Belkin', pat:'PAT-0338', category:'Acessório',  person:'Bruno Kato',    out:'19/set', due:'03/out', state:'ok',   label:'No prazo'},
-  ],
-  stats: {open:21, late:3},
+  catalog: [],
+  loans: [],
+  ops: [],
+  stats: {open:0, late:0},
   filters: {
     catalog: {chip:'Todos', onlyAvailable:false, query:''},
     ops:     {chip:'Todos', query:''},
@@ -162,7 +142,7 @@ function sessionUser(){
   if(!session || !session.user) return null;
   const user = session.user;
   const meta = user.user_metadata || {};
-  const label = meta.full_name || meta.name || user.email || 'Sessão ativa';
+  const label = (currentProfile && currentProfile.name) || meta.full_name || meta.name || user.email || 'Sessão ativa';
   return {
     initials: initialsOf(meta.full_name || meta.name || user.email),
     name: label,
@@ -177,8 +157,7 @@ function sessionUser(){
    mostrar. */
 function isOps(){
   if(!session || !session.user) return false;
-  const raw = (session.user.app_metadata && session.user.app_metadata.role) ||
-              (session.user.user_metadata && session.user.user_metadata.role) || '';
+  const raw = (session.user.app_metadata && session.user.app_metadata.role) || '';
   return ['admin', 'operacoes', 'operações', 'ops'].indexOf(String(raw).trim().toLowerCase()) !== -1;
 }
 
@@ -236,7 +215,7 @@ function catalogCard(item){
   card.className = 'equip-card' + clickable;
   card.innerHTML = `
       <div class="equip-card-top">
-        <div class="equip-icon"><svg class="icon" width="20" height="20"><use href="#${item.icon}"/></svg></div>
+        <div class="equip-photo">${item.imageUrl ? `<img src="${item.imageUrl}" alt="Foto de ${item.name}" loading="lazy">` : `<svg class="icon" width="20" height="20"><use href="#${item.icon}"/></svg>`}</div>
         ${pill}
       </div>
       <p class="equip-name">${item.name}</p>
@@ -278,7 +257,7 @@ function renderCatalog(){
     const available = state.catalog.filter(function(item){ return item.state === 'ok'; }).length;
     count.textContent = filtered
       ? items.length + ' de ' + state.catalog.length + ' equipamentos · ' + available + ' disponíveis'
-      : state.examples.catalogCount;
+      : state.examples.catalogCount || (state.catalog.length + ' equipamentos · ' + state.catalog.filter(function(item){return item.state === 'ok';}).length + ' disponíveis agora');
   }
 
   syncChips('#s2 .chips-row', filter.chip, filter.onlyAvailable);
@@ -299,6 +278,12 @@ function renderDetail(){
   set('detail-due', item.dueLabel || DUE_LABEL);
   const icon = byId('detail-icon');
   if(icon) icon.setAttribute('href', '#' + item.icon);
+  const image = document.querySelector('.detail-image');
+  if(image) image.innerHTML = item.imageUrl ? `<img src="${item.imageUrl}" alt="Foto de ${item.name}">` : `<svg class="icon" width="64" height="64"><use href="#${item.icon}"/></svg>`;
+  const status = byId('detail-status');
+  if(status){ status.className = 'pill ' + (item.state === 'ok' ? 'pill-ok' : item.state === 'maint' ? 'pill-maint' : 'pill-borrowed'); status.textContent = item.state === 'ok' ? 'Disponível' : item.state === 'maint' ? 'Em manutenção' : 'Emprestado'; }
+  const requestButton = byId('open-dialog-btn');
+  if(requestButton) requestButton.disabled = item.state !== 'ok';
   // descrição e histórico de exemplo existem só para o MacBook Pro 14"
   const demo = item.pat === 'PAT-1042';
   set('detail-desc', demo ? DETAIL_DEMO_DESC : item.category + ' · ' + item.pat + '. A retirada é feita no balcão de Operações.');
@@ -329,8 +314,7 @@ function renderLoanRow(loan){
         <p class="lbl">Devolver até ${loan.dueLabel}</p>
         <div class="deadline-track"><div class="deadline-fill" style="width:${loan.progress * 100}%"></div></div>
       </div>
-      <button class="btn btn-row" type="button">Devolver</button>`;
-  row.querySelector('.btn-row').addEventListener('click', function(){ returnLoan(loan, row); });
+      <span class="pill pill-borrowed">Em aberto</span>`;
   return row;
 }
 
@@ -365,7 +349,7 @@ function renderLoanCounters(){
 
   const button = byId('open-dialog-btn');
   if(button){
-    const blocked = state.loans.length >= MAX_ITEMS || hasOverdue();
+    const blocked = state.loans.length >= MAX_ITEMS || hasOverdue() || !state.pendingItem || state.pendingItem.state !== 'ok';
     button.disabled = blocked;
     button.style.opacity = blocked ? '.45' : '';
   }
@@ -496,6 +480,11 @@ function openLoanDialog(){
   const item = state.pendingItem;
   if(!backdrop || !item) return;
 
+  if(item.state !== 'ok'){
+    setMessage(byId('detail-message'), 'warn', 'Este equipamento não está disponível para solicitação.');
+    return;
+  }
+
   if(state.loans.length >= MAX_ITEMS){
     setMessage(byId('detail-message'), 'warn',
       'Limite de ' + MAX_ITEMS + ' itens simultâneos atingido. Devolva um item para solicitar outro.');
@@ -527,27 +516,29 @@ function closeLoanDialog(){
   if(backdrop) backdrop.classList.remove('open');
 }
 
-function confirmLoan(){
+async function confirmLoan(){
   const item = state.pendingItem;
-  closeLoanDialog();
-  if(!item || state.loans.length >= MAX_ITEMS || hasOverdue()) return;
-
-  state.loans.push({
-    icon: item.icon,
-    name: item.name,
-    pat: item.pat,
-    meta: item.pat + ' · retirado em ' + TODAY_LABEL,
-    dueLabel: item.dueLabel || DUE_LABEL,
-    progress: 0.12,
-  });
-  item.state = 'borrowed';
-  item.with = 'Você';
-  item.due = item.dueLabel;
-
-  renderCatalog();
-  renderLoans();
-  renderSidebars();
-  location.hash = '#s4';
+  if(!item || !item.id || !auth) return;
+  const message = byId('detail-message');
+  const confirm = byId('dialog-confirm');
+  if(confirm) confirm.disabled = true;
+  try {
+    const result = await auth.rpc('solicitar_emprestimo', {p_equipment_id: item.id});
+    if(result.error){
+      const code = result.error.message || '';
+      const text = code.includes('LIMITE_DE_5') ? 'Limite de 5 empréstimos em aberto atingido.'
+        : code.includes('DEVOLUCAO_EM_ATRASO') ? 'Uma devolução está atrasada; regularize antes de pedir outro item.'
+        : code.includes('EQUIPAMENTO_INDISPONIVEL') || code.includes('EQUIPAMENTO_JA_EMPRESTADO') ? 'Este equipamento não está mais disponível.'
+        : 'Não foi possível solicitar o empréstimo. Tente novamente.';
+      closeLoanDialog(); setMessage(message, 'error', text); await loadSessionData(); return;
+    }
+    closeLoanDialog();
+    await loadSessionData();
+    renderCatalog(); renderLoans(); renderSidebars();
+    location.hash = '#s4';
+  } catch(error) {
+    setMessage(message, 'error', 'Falha ao registrar a solicitação. Confira a conexão local e tente de novo.');
+  } finally { if(confirm) confirm.disabled = false; }
 }
 
 /* ---------- 10 · cadastro de equipamento (tela 06) ---------- */
@@ -662,6 +653,49 @@ function route(){
   }
 }
 
+function formatDate(value){
+  return new Intl.DateTimeFormat('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'}).format(new Date(value));
+}
+
+async function loadSessionData(){
+  if(!auth || !session || !session.user) return;
+  const profileResult = await auth.from('users').select('id,name,department').eq('auth_user_id', session.user.id).maybeSingle();
+  if(profileResult.error || !profileResult.data) throw profileResult.error || new Error('Perfil ainda não foi criado.');
+  currentProfile = profileResult.data;
+  const catalogResult = await auth.rpc('catalogo_equipamentos');
+  if(catalogResult.error) throw catalogResult.error;
+  const loansResult = await auth.from('loans').select('id,equipment_id,borrowed_at,due_date').eq('user_id', currentProfile.id).is('returned_at', null).order('borrowed_at', {ascending:false});
+  if(loansResult.error) throw loansResult.error;
+  const labels = {NOTEBOOK:'Notebook', MONITOR:'Monitor', CAMERA:'Câmera', ACCESSORY:'Acessório', PROJECTOR:'Projetor'};
+  const icons = {NOTEBOOK:'i-laptop', MONITOR:'i-monitor', CAMERA:'i-camera', ACCESSORY:'i-usb', PROJECTOR:'i-projector'};
+  const openLoans = loansResult.data || [];
+  state.catalog = (catalogResult.data || []).map(function(row){
+    const category = labels[row.category] || row.category;
+    const itemLoan = row.is_loaned ? (openLoans.find(function(loan){return loan.equipment_id === row.id;}) || null) : null;
+    return {id:row.id, icon:icons[row.category] || 'i-package', name:row.name, meta:category + ' · ' + row.patrimony,
+      category, pat:row.patrimony, imageUrl:row.image_url, dueLabel:formatDate(Date.now() + 14*86400000),
+      state:row.status === 'MAINTENANCE' ? 'maint' : row.is_loaned ? 'borrowed' : 'ok',
+      with:itemLoan ? 'Você' : 'Outra pessoa', due:row.due_date ? formatDate(row.due_date) : '', note:'Não disponível para solicitação'};
+  });
+  state.loans = openLoans.map(function(loan){
+    const item = state.catalog.find(function(row){return row.id === loan.equipment_id;}) || {};
+    const due = new Date(loan.due_date);
+    return {id:loan.id, icon:item.icon || 'i-package', name:item.name || 'Equipamento', pat:item.pat || '',
+      meta:item.pat + ' · retirado em ' + formatDate(loan.borrowed_at), dueLabel:formatDate(loan.due_date),
+      progress:0.35, late:due.getTime() < Date.now()};
+  });
+  const count = byId('catalog-count');
+  state.examples.catalogCount = state.catalog.length + ' equipamentos · ' + state.catalog.filter((x)=>x.state === 'ok').length + ' disponíveis agora';
+  if(count) count.textContent = state.examples.catalogCount;
+  const maintenance = state.catalog.filter((x)=>x.state === 'maint').length;
+  const maintenanceStat = document.querySelector('#s5 .stat-card:nth-child(4) .val');
+  if(maintenanceStat) maintenanceStat.textContent = String(maintenance);
+  const header = document.querySelector('#s2 .header-meta');
+  if(header) header.textContent = state.loans.length + ' de ' + MAX_ITEMS + ' itens com você';
+  state.pendingItem = state.catalog.find((item)=>item.state === 'ok') || state.catalog[0] || null;
+  renderCatalog(); renderLoans(); renderSidebars(); renderDetail();
+}
+
 function applySession(){
   renderSidebars();
   route();
@@ -700,7 +734,8 @@ async function handleLogin(event){
     session = result.data.session || null;
     if(senhaEl) senhaEl.value = '';
     setMessage(message, '', '');
-    applySession();   // com sessão ativa, o roteador leva ao catálogo
+    await loadSessionData();
+    applySession();
   } catch (error) {
     setMessage(message, 'error', isNetworkError(error)
       ? NETWORK_MSG
@@ -792,6 +827,7 @@ async function handleSignup(event){
     session = result.data.session || null;
     if(session){
       setMessage(message, '', '');
+      await loadSessionData();
       applySession();
     } else {
       setMessage(message, 'ok', 'Conta criada. Confirme seu e-mail pelo link enviado; ao confirmar, você voltará para o sistema.');
@@ -812,6 +848,8 @@ async function handleLogout(){
     /* a sessão em memória é descartada logo abaixo de qualquer forma */
   }
   session = null;
+  currentProfile = null;
+  state.catalog = []; state.loans = [];
   applySession();   // sem sessão, o roteador volta ao login
   setMessage(byId('login-message'), 'info', 'Sessão encerrada.');
 }
@@ -950,10 +988,12 @@ function boot(){
   if(auth){
     auth.auth.onAuthStateChange(function(event, nextSession){
       session = nextSession || null;
-      applySession();
+      if(session) loadSessionData().then(applySession).catch(function(error){ setMessage(byId('login-message'), 'error', 'Falha ao carregar seus dados locais: ' + (error.message || error)); applySession(); });
+      else { currentProfile = null; state.catalog = []; state.loans = []; renderCatalog(); renderLoans(); applySession(); }
     });
     auth.auth.getSession().then(function(result){
       session = result && result.data ? result.data.session || null : null;
+      if(session) return loadSessionData().then(applySession).catch(function(error){ setMessage(byId('login-message'), 'error', 'Falha ao carregar seus dados locais: ' + (error.message || error)); applySession(); });
       applySession();
     }).catch(function(){
       /* Mesmo sem sessão, mostra o login depois da inicialização do Auth. */

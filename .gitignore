@@ -16,4 +16,5 @@ coverage/
 .vscode/
 .idea/
 imagens-build/
+config.local.js
 

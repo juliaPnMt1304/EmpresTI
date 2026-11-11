@@ -1,5 +1,9 @@
 # 001 — Stack
 
+> Escopo atualizado: ADR-004 substitui temporariamente as seções 2–4 e 7 para as Entregas 3–4
+> locais: o front estático usa o cliente Supabase com RLS/RPC. A arquitetura Next/tRPC deste ADR
+> continua como decisão futura, sem implementação nem autorização de produção nesta entrega.
+
 ## 1. Arquitetura e repositório
 
 | Item | Escolha |

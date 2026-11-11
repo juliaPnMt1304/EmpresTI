@@ -1,5 +1,18 @@
 # EmpresTI
 
+## Execução local das Entregas 3 e 4
+
+1. Inicie o Docker Desktop.
+2. No terminal, entre em `EmpresTI/` e rode `npm run local:up`. O comando sobe o Supabase local,
+   aplica migrations, cria o tenant, carrega as 12 fotos aprovadas e semeia o catálogo.
+3. Rode `npm run dev` e abra **http://127.0.0.1:8080**. Crie sua conta na tela de login; o Auth
+   local dispensa confirmação de e-mail. Login, catálogo e solicitações usam apenas localhost.
+4. Para validar: `npm run test:spec` e `npm run test:loan`.
+
+`local:stop` encerra os containers Supabase. `config.local.js` é gerado fora do controle do Git e
+contém apenas a URL e a chave pública local; a chave de serviço local só é passada a scripts locais.
+Nenhuma destas instruções publica dados em produção.
+
 Sistema de empréstimo de equipamentos internos de TI. Catálogo com a situação de cada item,
 solicitação e devolução pelo colaborador, e tela de Operações com todos os empréstimos em aberto.
 Substitui a planilha compartilhada. Negócio em [`docs/PRD.md`](docs/PRD.md).

@@ -5,6 +5,10 @@ alwaysApply: false
 ---
 # Arquitetura do stack
 
+> Exceção local das Entregas 3–4: ADR-004 define o cliente Supabase no front estático, RLS e
+> RPC para a solicitação. A regra tRPC abaixo não se aplica a esses fluxos locais; produção
+> continua fora do escopo desta exceção.
+
 > leitor: agente
 
 As decisões e o motivo de cada uma estão em `docs/adr/001-stack.md`. Este arquivo só diz o que

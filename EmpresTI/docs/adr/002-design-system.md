@@ -1,5 +1,8 @@
 # 002 — Design system
 
+> Atualização: ADR-005 (11/11/2026) substitui a decisão "Fotografia: nenhuma" para as imagens
+> de equipamentos do catálogo. Os tokens, componentes e demais decisões visuais permanecem.
+
 ## 1. Tema e documentos
 
 | Item | Escolha |
