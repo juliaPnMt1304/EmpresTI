@@ -1,16 +1,12 @@
-# Handoff — 05/11/2026
+# Handoff — 11/11/2026
 
-1. Onde parei: reorganização do repositório conforme as aulas 9–11. Nenhuma tarefa de spec em
-   andamento; T0 (protótipo) das specs 001–003 está feita e testada.
-2. Commitado: nada (pacote entregue sem `.git`). Branch a definir pelo operador.
-3. Aplicado no banco local, não commitado: nada. A migration `0001_init` foi aplicada só em um
-   Postgres 16 descartável para teste; `0002` é proposta, não aplicada.
-4. Publicado: nada. Não houve push nem deploy.
-5. NÃO fazer na próxima sessão:
-   - não gerar a migration `0002` sem aprovar o DDL (`rules/migration.md`);
-   - não criar o app Next.js sem mostrar o que o scaffold gera (`rules/restrictions.md`);
-   - não reutilizar o `.env` do zip anterior: a `SUPABASE_SERVICE_ROLE_KEY` dele foi exposta e
-     precisa ser rotacionada no painel do Supabase.
-6. Não verificado nesta revisão (ambiente sem acesso ao engine do Prisma): `npm run db:validate`,
-   `npm run typecheck`, `npm run db:migrate:deploy` e `npm run db:check`. Rode-os e cole a saída.
-7. Próximo passo: aprovar ou ajustar as 3 specs e o DDL da `0002`, depois executar T1 da spec 001.
+1. Onde parei: scripts de preparo/publicação e auditoria da skill `imagens-equipamentos`; não há T/CA associado nas specs 001–003.
+2. Commitado: HEAD `8f992b2` na branch `main`; alterações desta tarefa não commitadas.
+3. Estado do banco local: nada aplicado ou alterado nesta tarefa.
+4. Publicado: nada. Não houve acesso ao Supabase, push ou deploy.
+5. Próxima sessão NÃO deve executar `npm run imagens:publicar` até haver 12 fotos preparadas e revisadas e decisão humana explícita.
+6. O publicador exige TTY e confirmação `PUBLICAR`, mas TTY não prova identidade humana; `--aprovar` também não comprova a revisão visual.
+7. Não verificado: Pixabay com chave real, bucket/permissões/POST no Supabase e crédito na tela do produto.
+8. `data/imagens/creditos.json` não existe neste checkout; testes usaram arquivos e dados temporários.
+9. A suíte local `npm run test:imagens` passou: 12 testes, sem rede.
+10. Próximo passo: preparar as imagens com autorização e chave via terminal, revisar visualmente cada uma e só então decidir sobre a publicação manual.

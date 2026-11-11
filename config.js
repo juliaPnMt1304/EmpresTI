@@ -26,12 +26,13 @@ window.EMPRESTI_CONFIG = {
 
   /* Opções do cliente de autenticação.
      persistSession:false — a sessão vive em memória enquanto a página está
-     aberta e NUNCA é gravada em localStorage/sessionStorage
+     aberta e NUNCA é gravada em localStorage/sessionStorage. detectSessionInUrl
+     permite receber a sessão ao retornar do link de confirmação de e-mail.
      (restrictions.md · Segurança: sessão é cookie httpOnly do @supabase/ssr
      na aplicação Next.js; aqui, num protótipo estático, fica só em memória). */
   auth: {
     persistSession: false,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   },
 };

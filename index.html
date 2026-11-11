@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261110">
 </head>
 <body>
 
@@ -59,8 +59,8 @@
       </div>
       <div class="login-form-wrap">
         <div class="login-form">
-          <h2>Entrar</h2>
-          <p class="sub">Use seu e-mail corporativo.</p>
+          <h2 id="auth-heading">Entrar</h2>
+          <p class="sub" id="auth-subtitle">Use seu e-mail para acessar o sistema.</p>
           <form id="login-form" novalidate>
           <div class="login-fields">
             <div class="field">
@@ -75,6 +75,31 @@
           <div class="form-message" id="login-message" role="status" aria-live="polite" hidden></div>
           <button class="btn btn-primary" style="width:100%;" type="submit" id="login-submit">Entrar <svg class="icon" width="15" height="15"><use href="#i-arrowright"/></svg></button>
           </form>
+          <p class="auth-switch" id="show-signup-wrap">Ainda não tem conta? <a href="#signup" id="show-signup">Criar conta</a></p>
+
+          <form id="signup-form" novalidate hidden>
+            <div class="login-fields">
+              <div class="field">
+                <label for="signup-name">Nome</label>
+                <input class="input" id="signup-name" name="name" type="text" autocomplete="name" placeholder="Seu nome">
+              </div>
+              <div class="field">
+                <label for="signup-email">E-mail</label>
+                <input class="input" id="signup-email" name="email" type="email" autocomplete="email" placeholder="nome@empresa.com">
+              </div>
+              <div class="field">
+                <label for="signup-password">Senha</label>
+                <input class="input" id="signup-password" name="password" type="password" autocomplete="new-password" placeholder="Crie uma senha">
+              </div>
+              <div class="field">
+                <label for="signup-password-confirm">Confirmar senha</label>
+                <input class="input" id="signup-password-confirm" name="password-confirm" type="password" autocomplete="new-password" placeholder="Digite a senha novamente">
+              </div>
+            </div>
+            <div class="form-message" id="signup-message" role="status" aria-live="polite" hidden></div>
+            <button class="btn btn-primary" style="width:100%;" type="submit" id="signup-submit">Criar conta <svg class="icon" width="15" height="15"><use href="#i-arrowright"/></svg></button>
+          </form>
+          <p class="auth-switch" id="show-login-wrap" hidden>Já tem uma conta? <a href="#login" id="show-login">Entrar</a></p>
           <div class="rule" style="margin:22px 0;"></div>
           <p class="support-note">Precisa de ajuda? Fale com Operações.</p>
         </div>
@@ -387,7 +412,7 @@
 
 <!-- biblioteca de autenticação (chave pública) + configuração + app -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="config.js?v=20261110"></script>
+<script src="app.js?v=20261110"></script>
 </body>
 </html>

@@ -59,7 +59,7 @@ function emptyState(text){
 /* ---------- 1 · configuração pública + cliente de autenticação ---------- */
 const CONFIG = window.EMPRESTI_CONFIG || {};
 const SUPA_LIB = window.supabase;
-const NETWORK_MSG = 'Não foi possível falar com o Supabase. Verifique a conexão e sirva a pasta por HTTP (ex.: npx serve docs): abrir o arquivo direto (file://) pode ser bloqueado pelo navegador.';
+const NETWORK_MSG = 'Não foi possível falar com o Supabase. Verifique a conexão e sirva a pasta por HTTP (ex.: python -m http.server 8000); abrir o arquivo direto (file://) pode ser bloqueado pelo navegador.';
 
 let auth = null;
 let session = null;
@@ -70,7 +70,7 @@ function createAuthClient(){
   const authOptions = Object.assign({
     persistSession: false,      // proibido guardar sessão em localStorage/sessionStorage
     autoRefreshToken: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   }, CONFIG.auth || {});
   return SUPA_LIB.createClient(CONFIG.supabaseUrl, CONFIG.supabasePublishableKey, { auth: authOptions });
 }
@@ -639,6 +639,13 @@ function resolveRoute(){
 }
 
 function route(){
+  if(location.hash === '#signup'){
+    history.replaceState(null, '', LOGIN_ROUTE);
+    showAuthMode('signup');
+  } else if(location.hash === '#login'){
+    history.replaceState(null, '', LOGIN_ROUTE);
+    showAuthMode('login');
+  }
   const target = resolveRoute();
   if(location.hash !== target){
     // replace: não deixa a tela barrada no histórico do botão "voltar"
@@ -698,6 +705,101 @@ async function handleLogin(event){
     setMessage(message, 'error', isNetworkError(error)
       ? NETWORK_MSG
       : 'Falha inesperada ao entrar: ' + ((error && error.message) || error));
+  } finally {
+    if(submit) submit.disabled = false;
+  }
+}
+
+function showAuthMode(mode){
+  const signup = mode === 'signup';
+  const loginForm = byId('login-form');
+  const signupForm = byId('signup-form');
+  const heading = byId('auth-heading');
+  const subtitle = byId('auth-subtitle');
+  if(loginForm) loginForm.hidden = signup;
+  if(signupForm) signupForm.hidden = !signup;
+  if(byId('show-signup-wrap')) byId('show-signup-wrap').hidden = signup;
+  if(byId('show-login-wrap')) byId('show-login-wrap').hidden = !signup;
+  if(heading) heading.textContent = signup ? 'Criar conta' : 'Entrar';
+  if(subtitle) subtitle.textContent = signup
+    ? 'Preencha seus dados para acessar o sistema.'
+    : 'Use seu e-mail para acessar o sistema.';
+
+  const fromEmail = byId(signup ? 'login-email' : 'signup-email');
+  const toEmail = byId(signup ? 'signup-email' : 'login-email');
+  if(fromEmail && toEmail && fromEmail.value && !toEmail.value) toEmail.value = fromEmail.value;
+  setMessage(byId('login-message'), '', '');
+  setMessage(byId('signup-message'), '', '');
+  const firstField = byId(signup ? 'signup-name' : 'login-email');
+  if(firstField) firstField.focus();
+}
+
+async function handleSignup(event){
+  if(event) event.preventDefault();
+  const message = byId('signup-message');
+  const name = fieldValue('signup-name');
+  const email = fieldValue('signup-email');
+  const password = byId('signup-password') ? byId('signup-password').value : '';
+  const confirm = byId('signup-password-confirm') ? byId('signup-password-confirm').value : '';
+  const submit = byId('signup-submit');
+
+  if(!name || !email || !password || !confirm){
+    setMessage(message, 'warn', 'Preencha todos os campos.');
+    return;
+  }
+  if(!EMAIL_RE.test(email)){
+    setMessage(message, 'warn', 'E-mail inválido. Confira o endereço digitado.');
+    return;
+  }
+  if(password !== confirm){
+    setMessage(message, 'warn', 'As senhas não coincidem.');
+    return;
+  }
+  if(!AUTH_AVAILABLE){
+    setMessage(message, 'error', 'Autenticação indisponível: a biblioteca do Supabase não foi carregada. ' + NETWORK_MSG);
+    return;
+  }
+
+  if(submit) submit.disabled = true;
+  setMessage(message, 'info', 'Criando sua conta…');
+  try {
+    const result = await auth.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {full_name: name},
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if(result.error){
+      const code = result.error.code || result.error.error_code || '';
+      let detail = result.error.message || 'erro desconhecido';
+      if(code === 'weak_password') detail = 'A senha não atende aos requisitos do Supabase.';
+      if(code === 'email_address_not_authorized'){
+        detail = 'O Supabase não pode enviar confirmação para esse endereço pelo provedor de e-mail atual. Configure um SMTP para enviar e-mails aos usuários.';
+      }
+      if(code === 'over_email_send_rate_limit') detail = 'O limite de envio de e-mails foi atingido. Aguarde e tente novamente.';
+      setMessage(message, 'error', isNetworkError(result.error)
+        ? NETWORK_MSG
+        : 'Não foi possível criar a conta: ' + detail);
+      return;
+    }
+
+    const signupPassword = byId('signup-password');
+    const signupConfirm = byId('signup-password-confirm');
+    if(signupPassword) signupPassword.value = '';
+    if(signupConfirm) signupConfirm.value = '';
+    session = result.data.session || null;
+    if(session){
+      setMessage(message, '', '');
+      applySession();
+    } else {
+      setMessage(message, 'ok', 'Conta criada. Confirme seu e-mail pelo link enviado; ao confirmar, você voltará para o sistema.');
+    }
+  } catch (error) {
+    setMessage(message, 'error', isNetworkError(error)
+      ? NETWORK_MSG
+      : 'Falha inesperada ao criar a conta: ' + ((error && error.message) || error));
   } finally {
     if(submit) submit.disabled = false;
   }
@@ -796,6 +898,18 @@ function wireDialog(){
 function wireNavigation(){
   const loginForm = byId('login-form');
   if(loginForm) loginForm.addEventListener('submit', handleLogin);
+  const signupForm = byId('signup-form');
+  if(signupForm) signupForm.addEventListener('submit', handleSignup);
+  const showSignup = byId('show-signup');
+  if(showSignup) showSignup.addEventListener('click', function(event){
+    event.preventDefault();
+    showAuthMode('signup');
+  });
+  const showLogin = byId('show-login');
+  if(showLogin) showLogin.addEventListener('click', function(event){
+    event.preventDefault();
+    showAuthMode('login');
+  });
   document.addEventListener('click', function(event){
     const btn = event.target.closest && event.target.closest('[data-action="logout"]');
     if(btn) handleLogout();
@@ -826,7 +940,6 @@ function boot(){
   renderLoanCounters();
   renderDetail();
   updatePreview();
-  applySession();
 
   wireChips();
   wireSearch();
@@ -840,14 +953,14 @@ function boot(){
       applySession();
     });
     auth.auth.getSession().then(function(result){
-      if(result && result.data && result.data.session){
-        session = result.data.session;
-        applySession();
-      }
+      session = result && result.data ? result.data.session || null : null;
+      applySession();
     }).catch(function(){
-      /* persistSession:false — não há sessão antiga para restaurar */
+      /* Mesmo sem sessão, mostra o login depois da inicialização do Auth. */
+      applySession();
     });
   } else {
+    applySession();
     setMessage(byId('login-message'), 'info',
       'Autenticação indisponível: não foi possível carregar a biblioteca do Supabase. ' + NETWORK_MSG);
   }
