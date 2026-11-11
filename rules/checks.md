@@ -54,9 +54,9 @@ concluída com um item pendente. Marque mentalmente cada seção; não pule para
       do request, sem fila.
 
 ## Regras de negócio (PRD)
-- [ ] Nenhuma alteração passa do limite de 3 itens simultâneos emprestados por
+- [ ] Nenhuma alteração passa do limite de 5 itens simultâneos emprestados por
       colaborador.
-- [ ] Prazo padrão de devolução continua sendo 14 dias.
+- [ ] Prazo padrão de devolução continua sendo 14 dias corridos.
 - [ ] Colaborador com item em atraso não consegue solicitar novo empréstimo —
       fluxo coberto por teste.
 - [ ] Equipamento em manutenção nunca aparece como disponível no catálogo.

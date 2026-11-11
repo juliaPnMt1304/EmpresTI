@@ -15,23 +15,5 @@
    (a chave publicável `sb_publishable_…` substitui a anon key antiga)
    ========================================================================= */
 
-window.EMPRESTI_CONFIG = {
-  /* Supabase · Project Settings > Data API > Project URL */
-  supabaseUrl: 'https://fobuhqvjheblmwbiwera.supabase.co',
-
-  /* Supabase · Project Settings > API Keys > publishable key.
-     Chave pública: pode ir para o navegador porque quem protege o dado é o
-     RLS + os middlewares do tRPC, não o segredo da chave. */
-  supabasePublishableKey: 'sb_publishable_Vz7D8Y9J-MNR6Ncec2-HSg_nvP0duh-',
-
-  /* Opções do cliente de autenticação.
-     persistSession:false — a sessão vive em memória enquanto a página está
-     aberta e NUNCA é gravada em localStorage/sessionStorage
-     (restrictions.md · Segurança: sessão é cookie httpOnly do @supabase/ssr
-     na aplicação Next.js; aqui, num protótipo estático, fica só em memória). */
-  auth: {
-    persistSession: false,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
-};
+/* Sem arquivo local gerado, a aplicação não usa projeto remoto por acidente. */
+window.EMPRESTI_CONFIG = window.EMPRESTI_LOCAL_CONFIG || {};

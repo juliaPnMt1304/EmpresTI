@@ -1,0 +1,21 @@
+import { execFileSync } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+const env = { ...process.env, SUPABASE_TELEMETRY_DISABLED: '1' };
+const npmCli = process.env.npm_execpath;
+if (!npmCli) throw new Error('Execute pelo npm run local:up.');
+const cli = (args) => execFileSync(process.execPath, [npmCli, 'exec', '--', 'supabase', ...args], { cwd: process.cwd(), env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+cli(['start']);
+const output = cli(['status']);
+const status = JSON.parse(output.slice(output.indexOf('{')));
+const url = status.API_URL;
+if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(url)) throw new Error('Supabase fora de localhost; interrompido.');
+const localEnv = { ...env, DATABASE_URL: status.DB_URL, DIRECT_URL: status.DB_URL, SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: status.SERVICE_ROLE_KEY };
+const run = (script) => execFileSync(process.execPath, [npmCli, 'run', script], { cwd: process.cwd(), env: localEnv, stdio: 'inherit' });
+run('db:migrate:deploy');
+run('db:seed:tenant');
+run('local:images');
+run('db:seed:equipment');
+await writeFile(resolve('..', 'config.local.js'), `window.EMPRESTI_LOCAL_CONFIG = { supabaseUrl: ${JSON.stringify(url)}, supabasePublishableKey: ${JSON.stringify(status.PUBLISHABLE_KEY)}, auth: { persistSession: false, autoRefreshToken: true, detectSessionInUrl: true } };\n`, { flag: 'w' });
+console.log('Supabase local pronto. Rode npm run dev e abra http://localhost:8080. Nenhuma credencial foi exibida.');

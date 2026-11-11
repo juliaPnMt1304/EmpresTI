@@ -1,0 +1,55 @@
+{
+  "name": "empresti",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EmpresTI — empréstimo de equipamentos internos de TI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:seed": "prisma db seed",
+    "db:seed:tenant": "node scripts/seed-tenant.mjs",
+    "db:seed:equipment": "node scripts/seed-equipment.mjs",
+    "local:up": "node scripts/local-up.mjs",
+    "local:stop": "supabase stop",
+    "local:images": "node scripts/upload-local-images.mjs",
+    "dev": "node scripts/serve.mjs",
+    "db:check": "tsx scripts/check-db.ts",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "postinstall": "prisma generate",
+    "proto": "node scripts/serve-prototipo.mjs",
+    "test:e2e": "node tests/e2e/prototipo.spec.mjs",
+    "test:local": "node tests/local-data.mjs",
+    "test:loan": "node tests/loan-rules.mjs",
+    "test:spec": "npm run test:e2e && npm run test:local",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "db:reset": "prisma migrate reset",
+    "check": "npm run db:validate && npm run typecheck && npm run test:e2e",
+    "imagens:preparar": "node skills/imagens-equipamentos/scripts/preparar.mjs",
+    "test:imagens": "node skills/imagens-equipamentos/scripts/test-imagens.mjs",
+    "imagens:publicar": "node skills/imagens-equipamentos/scripts/publicar.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "dotenv": "^17.0.0",
+    "playwright": "^1.49.0",
+    "prisma": "^6.19.3",
+    "sharp": "^0.33.5",
+    "supabase": "^3.1.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.3"
+  },
+  "prisma": { "seed": "node prisma/seed.mjs" }
+}
